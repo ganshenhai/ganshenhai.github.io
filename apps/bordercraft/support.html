@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - BorderCraft</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-color: #3b82f6;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 48px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        header {
+            margin-bottom: 36px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-top: 28px;
+            margin-bottom: 12px;
+        }
+
+        p, li {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .faq-item {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .faq-question {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .faq-answer {
+            color: var(--text-muted);
+            margin-bottom: 0;
+        }
+
+        .contact-box {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 24px;
+            border-radius: 8px;
+            margin-top: 36px;
+            text-align: center;
+        }
+
+        .contact-box h3 {
+            font-size: 18px;
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+
+        .contact-box p {
+            color: #1e3a8a;
+            margin-bottom: 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        footer a {
+            color: var(--text-muted);
+            text-decoration: underline;
+            margin: 0 8px;
+        }
+
+        footer a:hover {
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 24px;
+            }
+            body {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Support & Help</h1>
+            <div class="subtitle">BorderCraft Official Support Center</div>
+        </header>
+
+        <main>
+            <h2>Frequently Asked Questions (FAQ)</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">Q: Game progress lost? How to use iCloud Sync?</div>
+                <div class="faq-answer">
+                    A: BorderCraft supports automatic iCloud sync. Please ensure your device is logged into your Apple ID and that iCloud is enabled for this game in your system settings. When switching devices, simply log into the same Apple ID with an active network connection, and your progress will sync automatically.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Q: Game Center achievements or leaderboards not loading?</div>
+                <div class="faq-answer">
+                    A: Please check if you are successfully signed into your Apple Game Center account in your iOS system settings. Poor network conditions may cause brief connection failures; try switching to a stable Wi-Fi or cellular network.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Q: Experiencing crashes or lags?</div>
+                <div class="faq-answer">
+                    A: Try clearing your background apps, restarting the game, or rebooting your device. Also, ensure your iOS system is up to date. If the issue persists, feel free to contact us below.
+                </div>
+            </div>
+
+            <div class="contact-box">
+                <h3>Need More Help?</h3>
+                <p>If you encounter any other issues or have valuable suggestions, feel free to contact us via email:<br>
+                <strong>me@ganshenhai.com</strong></p>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        &copy; 2026 BorderCraft. All Rights Reserved. <br>
+        <div style="margin-top: 8px;">
+            <a href="index.html">Home</a> | 
+            <a href="privacy.html">Privacy Policy</a>
+        </div>
+    </footer>
+
+</body>
+</html>
