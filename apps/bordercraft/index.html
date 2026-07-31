@@ -3,23 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="imgs/favicon.ico" type="image/x-icon">
     <title>BorderCraft</title>
     <style>
+        /* 默认：深色模式 (Dark Theme) */
         :root {
             --bg-color: #0f172a;
             --card-bg: rgba(30, 41, 59, 0.7);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent-glow: rgba(59, 130, 246, 0.5);
-            --accent-color: #3b82f6;
-            --accent-hover: #2563eb;
             --border-color: rgba(255, 255, 255, 0.1);
+            --footer-text: #64748b;
+        }
+
+        /* 浅色模式 (Light Theme) */
+        [data-theme="light"] {
+            --bg-color: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --border-color: rgba(0, 0, 0, 0.08);
+            --footer-text: #94a3b8;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         body {
@@ -47,6 +60,31 @@
             pointer-events: none;
         }
 
+        /* 右上角主题切换按钮 */
+        .theme-toggle {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            font-size: 18px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .theme-toggle:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
         .container {
             max-width: 900px;
             margin: 0 auto;
@@ -61,62 +99,69 @@
         }
 
         .game-logo-img {
-            width: 100px;  /* 在网页上显示的宽度 */
-            height: 100px; /* 在网页上显示的高度 */
-            object-fit: contain; /* 保持图片比例，防止拉伸 */
-            border-radius: 24px; /* 可选：保留圆角 */
-            margin: 0 auto 32px; /* 居中并留出下方间距 */
-            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.3); /* 可选：保留阴影 */
-            display: block; /* 确保居中生效 */
+            width: 100px; 
+            height: 100px; 
+            object-fit: contain; 
+            border-radius: 24px; 
+            margin: 0 auto 24px; 
+            box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.3); 
+            display: block; 
         }
 
         h1 {
             font-size: 48px;
             font-weight: 800;
             letter-spacing: -1px;
-            margin-bottom: 16px;
-            background: linear-gradient(to right, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            color: var(--text-main);
         }
 
         .slogan {
             font-size: 20px;
             color: var(--text-muted);
             max-width: 600px;
-            margin: 0 auto 40px;
+            margin: 0 auto 32px;
             line-height: 1.5;
         }
 
-        /* App Store 按钮样式 */
-        .download-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--text-main);
-            color: var(--bg-color);
-            font-weight: 600;
-            font-size: 16px;
-            padding: 14px 32px;
-            border-radius: 50px;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 15px -3px rgba(255, 255, 255, 0.1);
-            margin-bottom: 60px;
+        .store-badge-container {
+            margin-bottom: 50px;
         }
 
-        .download-btn:hover {
-            transform: translateY(-2px);
-            background-color: #ffffff;
-            box-shadow: 0 15px 20px -3px rgba(255, 255, 255, 0.2);
+        .store-badge-container a {
+            display: inline-block;
+            transition: filter 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 6px;
         }
 
-        /* 核心特色网格 */
+        .store-badge-container a:hover {
+            filter: brightness(1.15);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .store-badge-container .badge-light {
+            display: none;
+        }
+        .store-badge-container .badge-dark {
+            display: block;
+            height: 52px;
+            width: auto;
+        }
+
+        [data-theme="light"] .store-badge-container .badge-dark {
+            display: none;
+        }
+        [data-theme="light"] .store-badge-container .badge-light {
+            display: block;
+            height: 52px;
+            width: auto;
+        }
+
         .features {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
-            margin-bottom: 60px;
+            margin-bottom: 40px;
             text-align: left;
         }
 
@@ -126,7 +171,8 @@
             backdrop-filter: blur(12px);
             padding: 24px;
             border-radius: 16px;
-            transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transition: transform 0.3s ease, border-color 0.3s ease;
         }
 
         .feature-card:hover {
@@ -147,7 +193,6 @@
             line-height: 1.5;
         }
 
-        /* 底部导航链接 */
         footer {
             padding: 30px 20px;
             text-align: center;
@@ -176,7 +221,7 @@
 
         .copyright {
             font-size: 12px;
-            color: #64748b;
+            color: var(--footer-text);
         }
 
         @media (max-width: 768px) {
@@ -192,6 +237,15 @@
             .container {
                 padding: 40px 16px;
             }
+            .store-badge-container img {
+                height: 46px;
+            }
+            .theme-toggle {
+                top: 16px;
+                right: 16px;
+                width: 36px;
+                height: 36px;
+            }
         }
     </style>
 </head>
@@ -199,15 +253,20 @@
 
     <div class="bg-glow"></div>
 
+    <!-- 主题切换按钮 -->
+    <button class="theme-toggle" id="themeToggleBtn" aria-label="Toggle Theme">🌙</button>
+
     <div class="container">
         <img src="./imgs/logo.png" alt="BorderCraft Logo" class="game-logo-img">
 
         <h1>BorderCraft</h1>
         <p class="slogan">Group the Dots, Shape the Odds</p>
 
-        <div>
-            <a href="#" class="download-btn">
-                <span>Available on the App Store</span>
+        <!-- App Store 徽章：同时引入白字与黑字版，由 CSS 自动根据主题控制显隐 -->
+        <div class="store-badge-container">
+            <a href="你的App Store链接">
+                <img src="imgs/Download_on_the_App_Store_Badge_US-UK_RGB_wht_092917.svg" alt="Download on the App Store" class="badge-dark">
+                <img src="imgs/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" alt="Download on the App Store" class="badge-light">
             </a>
         </div>
 
@@ -236,6 +295,54 @@
             &copy; 2026 BorderCraft. All Rights Reserved.
         </div>
     </footer>
+
+    <script>
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const htmlElement = document.documentElement;
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function updateButtonIcon(theme) {
+            themeToggleBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+        }
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            htmlElement.setAttribute('data-theme', savedTheme);
+            updateButtonIcon(savedTheme);
+        } else {
+            if (!systemPrefersDark.matches) {
+                htmlElement.setAttribute('data-theme', 'light');
+                updateButtonIcon('light');
+            } else {
+                updateButtonIcon('dark');
+            }
+        }
+
+        systemPrefersDark.addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                if (e.matches) {
+                    htmlElement.removeAttribute('data-theme');
+                    updateButtonIcon('dark');
+                } else {
+                    htmlElement.setAttribute('data-theme', 'light');
+                    updateButtonIcon('light');
+                }
+            }
+        });
+
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-theme');
+            if (currentTheme === 'light') {
+                htmlElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'dark');
+                updateButtonIcon('dark');
+            } else {
+                htmlElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+                updateButtonIcon('light');
+            }
+        });
+    </script>
 
 </body>
 </html>
