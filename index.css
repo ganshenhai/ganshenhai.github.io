@@ -4,10 +4,18 @@
     box-sizing: border-box;
 }
 
+@font-face {
+    font-family: 'Dancing Script';
+    src: url('./fonts/DancingScript-Variable.woff2') format('woff2');
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Segoe UI', sans-serif;
-    background-color: #1d1d1f;
-    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif;
+    background: radial-gradient(ellipse at 50% 40%, #2a2a2e 0%, #1d1d1f 50%, #0f0f10 100%);
+    color: #f5f5f7;
     min-height: 100vh;
     overflow: hidden;
     position: relative;
@@ -28,40 +36,13 @@ body {
 .danmaku-bg .line {
     position: absolute;
     white-space: nowrap;
-    font-weight: 500;
+    font-weight: 200;
     line-height: 1;
     letter-spacing: 0.02em;
-    color: rgba(200, 200, 200, 0.85);
+    color: rgba(150, 150, 160, 0.9);
     animation: scroll-left linear infinite;
     will-change: transform;
 }
-
-/*
- * 20行，每行 top 间隔 5%，保证不重叠。
- * 字号在 1.1em ~ 2.2em 之间交替，营造错落纵深。
- * 大字淡一些，小字亮一些。
- * 速度 48-52s 范围内，delay 均匀错开。
- */
-.danmaku-bg .line:nth-child(1)  { top: 0%;   font-size: 1.8em; opacity: 0.30; animation-duration: 50s; animation-delay: 0s; }
-.danmaku-bg .line:nth-child(2)  { top: 5%;   font-size: 1.2em; opacity: 0.45; animation-duration: 52s; animation-delay: -25s; }
-.danmaku-bg .line:nth-child(3)  { top: 10%;  font-size: 2.2em; opacity: 0.22; animation-duration: 48s; animation-delay: -5s; }
-.danmaku-bg .line:nth-child(4)  { top: 15%;  font-size: 1.1em; opacity: 0.48; animation-duration: 51s; animation-delay: -35s; }
-.danmaku-bg .line:nth-child(5)  { top: 20%;  font-size: 1.6em; opacity: 0.35; animation-duration: 49s; animation-delay: -12s; }
-.danmaku-bg .line:nth-child(6)  { top: 25%;  font-size: 2.0em; opacity: 0.25; animation-duration: 50s; animation-delay: -42s; }
-.danmaku-bg .line:nth-child(7)  { top: 30%;  font-size: 1.2em; opacity: 0.45; animation-duration: 52s; animation-delay: -8s; }
-.danmaku-bg .line:nth-child(8)  { top: 35%;  font-size: 1.9em; opacity: 0.28; animation-duration: 48s; animation-delay: -38s; }
-.danmaku-bg .line:nth-child(9)  { top: 40%;  font-size: 1.3em; opacity: 0.42; animation-duration: 51s; animation-delay: -18s; }
-.danmaku-bg .line:nth-child(10) { top: 45%;  font-size: 2.1em; opacity: 0.22; animation-duration: 49s; animation-delay: -46s; }
-.danmaku-bg .line:nth-child(11) { top: 50%;  font-size: 1.5em; opacity: 0.38; animation-duration: 50s; animation-delay: -2s; }
-.danmaku-bg .line:nth-child(12) { top: 55%;  font-size: 1.1em; opacity: 0.48; animation-duration: 52s; animation-delay: -30s; }
-.danmaku-bg .line:nth-child(13) { top: 60%;  font-size: 2.0em; opacity: 0.25; animation-duration: 48s; animation-delay: -15s; }
-.danmaku-bg .line:nth-child(14) { top: 65%;  font-size: 1.4em; opacity: 0.40; animation-duration: 51s; animation-delay: -40s; }
-.danmaku-bg .line:nth-child(15) { top: 70%;  font-size: 1.8em; opacity: 0.30; animation-duration: 49s; animation-delay: -7s; }
-.danmaku-bg .line:nth-child(16) { top: 75%;  font-size: 1.2em; opacity: 0.45; animation-duration: 50s; animation-delay: -33s; }
-.danmaku-bg .line:nth-child(17) { top: 80%;  font-size: 2.2em; opacity: 0.22; animation-duration: 52s; animation-delay: -20s; }
-.danmaku-bg .line:nth-child(18) { top: 85%;  font-size: 1.3em; opacity: 0.42; animation-duration: 48s; animation-delay: -48s; }
-.danmaku-bg .line:nth-child(19) { top: 90%;  font-size: 1.7em; opacity: 0.32; animation-duration: 51s; animation-delay: -10s; }
-.danmaku-bg .line:nth-child(20) { top: 95%;  font-size: 1.1em; opacity: 0.48; animation-duration: 49s; animation-delay: -28s; }
 
 @keyframes scroll-left {
     from {
@@ -84,22 +65,74 @@ body {
     text-align: center;
 }
 
-/* 文字底部用一个大范围的模糊遮罩，边缘柔和渐隐，没有明显边框 */
-.content::before {
-    display: none;
-}
-
 h5 {
-    font-size: 4.5em;
+    font-family: 'Dancing Script', cursive;
+    font-size: 5.5em;
     font-weight: 700;
-    letter-spacing: -0.02em;
-    margin-bottom: 0.2em;
-    color: #f5f5f7;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.1em;
+    color: #ffffff;
+    text-shadow: 0 0 80px rgba(255, 255, 255, 0.08);
 }
 
-p {
-    font-size: 1.3em;
-    font-weight: 400;
-    letter-spacing: 0.05em;
-    color: rgba(245, 245, 247, 0.7);
+.hello {
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.tilde {
+    color: #feca57;
+}
+
+.signature {
+    font-family: 'Dancing Script', cursive;
+    font-size: 1.5em;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.75);
+    margin-top: 0.6em;
+    align-self: center;
+    position: relative;
+    left: 5em;
+    transform: rotate(-6deg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sig-line {
+    width: 100%;
+    max-width: 180px;
+    height: 10px;
+    margin-top: -4px;
+    margin-left: 2em;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    h5 {
+        font-size: 3.5em;
+    }
+    .signature {
+        font-size: 1.2em;
+        left: 3em;
+    }
+    .sig-line {
+        max-width: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    h5 {
+        font-size: 2.8em;
+    }
+    .signature {
+        font-size: 1em;
+        left: 2em;
+    }
+    .sig-line {
+        max-width: 90px;
+    }
 }

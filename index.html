@@ -8,33 +8,118 @@
     </head>
     <body>
         <!-- 弹幕背景 -->
-        <div class="danmaku-bg">
-            <span class="line">Where the world is, there is no 靠谱 &nbsp;&nbsp; Où est le monde, il n'y a pas de 靠谱 &nbsp;&nbsp; Wo die Welt ist, gibt es kein 靠谱 &nbsp;&nbsp; Donde está el mundo, no hay 靠谱</span>
-            <span class="line">Dove c'è il mondo, non c'è 靠谱 &nbsp;&nbsp; Onde há mundo, não há 靠谱 &nbsp;&nbsp; Где мир, там нет 靠谱 &nbsp;&nbsp; 世界があるところに、靠谱はない</span>
-            <span class="line">세상이 있는 곳에 靠谱는 없다 &nbsp;&nbsp; Waar de wereld is, is er geen 靠谱 &nbsp;&nbsp; Där världen är, finns ingen 靠谱 &nbsp;&nbsp; Hvor verden er, er der ingen 靠谱</span>
-            <span class="line">Missä maailma on, siellä ei ole 靠谱 &nbsp;&nbsp; Gdzie jest świat, nie ma 靠谱 &nbsp;&nbsp; Kde je svět, tam není 靠谱 &nbsp;&nbsp; Ahol a világ van, ott nincs 靠谱</span>
-            <span class="line">Dünya neredeyse, orada 靠谱 yoktur &nbsp;&nbsp; حيث يوجد العالم، لا يوجد 靠谱 &nbsp;&nbsp; जहाँ दुनिया है, वहाँ 靠谱 नहीं है &nbsp;&nbsp; โลกอยู่ที่ไหน ที่นั่นไม่มี 靠谱</span>
-            <span class="line">Nơi có thế giới, không có 靠谱 &nbsp;&nbsp; Di mana ada dunia, tidak ada 靠谱 &nbsp;&nbsp; Kung saan ang mundo, walang 靠谱 &nbsp;&nbsp; Де є світ, там немає 靠谱</span>
-            <span class="line">Kde je svet, tam nie je 靠谱 &nbsp;&nbsp; Unde este lumea, nu există 靠谱 &nbsp;&nbsp; Όπου είναι ο κόσμος, δεν υπάρχει 靠谱 &nbsp;&nbsp; עולם יש, 靠谱 אין</span>
-            <span class="line">有世界的地方，就没有靠谱 &nbsp;&nbsp; Where the world is, there is no 靠谱 &nbsp;&nbsp; Où est le monde, il n'y a pas de 靠谱 &nbsp;&nbsp; Wo die Welt ist, gibt es kein 靠谱</span>
-            <span class="line">Donde está el mundo, no hay 靠谱 &nbsp;&nbsp; Dove c'è il mondo, non c'è 靠谱 &nbsp;&nbsp; Onde há mundo, não há 靠谱 &nbsp;&nbsp; Где мир, там нет 靠谱</span>
-            <span class="line">世界があるところに、靠谱はない &nbsp;&nbsp; 세상이 있는 곳에 靠谱는 없다 &nbsp;&nbsp; Waar de wereld is, is er geen 靠谱 &nbsp;&nbsp; Där världen är, finns ingen 靠谱</span>
-            <span class="line">Hvor verden er, er der ingen 靠谱 &nbsp;&nbsp; Missä maailma on, siellä ei ole 靠谱 &nbsp;&nbsp; Gdzie jest świat, nie ma 靠谱 &nbsp;&nbsp; Kde je svět, tam není 靠谱</span>
-            <span class="line">Ahol a világ van, ott nincs 靠谱 &nbsp;&nbsp; Dünya neredeyse, orada 靠谱 yoktur &nbsp;&nbsp; حيث يوجد العالم، لا يوجد 靠谱 &nbsp;&nbsp; जहाँ दुनिया है, वहाँ 靠谱 नहीं है</span>
-            <span class="line">โลกอยู่ที่ไหน ที่นั่นไม่มี 靠谱 &nbsp;&nbsp; Nơi có thế giới, không có 靠谱 &nbsp;&nbsp; Di mana ada dunia, tidak ada 靠谱 &nbsp;&nbsp; Kung saan ang mundo, walang 靠谱</span>
-            <span class="line">Де є світ, там немає 靠谱 &nbsp;&nbsp; Kde je svet, tam nie je 靠谱 &nbsp;&nbsp; Unde este lumea, nu există 靠谱 &nbsp;&nbsp; Όπου είναι ο κόσμος, δεν υπάρχει 靠谱</span>
-            <span class="line">עולם יש, 靠谱 אין &nbsp;&nbsp; 有世界的地方，就没有靠谱 &nbsp;&nbsp; Where the world is, there is no 靠谱 &nbsp;&nbsp; Wo die Welt ist, gibt es kein 靠谱</span>
-            <span class="line">Dove c'è il mondo, non c'è 靠谱 &nbsp;&nbsp; Где мир, там нет 靠谱 &nbsp;&nbsp; 세상이 있는 곳에 靠谱는 없다 &nbsp;&nbsp; Dünya neredeyse, orada 靠谱 yoktur</span>
-            <span class="line">Where the world is, there is no 靠谱 &nbsp;&nbsp; Donde está el mundo, no hay 靠谱 &nbsp;&nbsp; Onde há mundo, não há 靠谱 &nbsp;&nbsp; 有世界的地方，就没有靠谱</span>
-            <span class="line">Wo die Welt ist, gibt es kein 靠谱 &nbsp;&nbsp; Où est le monde, il n'y a pas de 靠谱 &nbsp;&nbsp; 世界があるところに、靠谱はない &nbsp;&nbsp; Dove c'è il mondo, non c'è 靠谱</span>
-            <span class="line">Где мир, там нет 靠谱 &nbsp;&nbsp; 세상이 있는 곳에 靠谱는 없다 &nbsp;&nbsp; Waar de wereld is, is er geen 靠谱 &nbsp;&nbsp; Missä maailma on, siellä ei ole 靠谱</span>
-            <span class="line">Gdzie jest świat, nie ma 靠谱 &nbsp;&nbsp; Ahol a világ van, ott nincs 靠谱 &nbsp;&nbsp; Dünya neredeyse, orada 靠谱 yoktur &nbsp;&nbsp; حيث يوجد العالم، لا يوجد 靠谱</span>
-        </div>
+        <div class="danmaku-bg" id="danmaku"></div>
 
         <!-- 主内容 -->
         <div class="content">
-            <h5>hello, there~</h5>
-            <p>ganshenhai's page here...</p>
+            <h5><span class="hello">hello</span>, there<span class="tilde">~</span></h5>
+            <p class="signature">Shenhai Gan<svg class="sig-line" viewBox="0 0 200 10" xmlns="http://www.w3.org/2000/svg"><path d="M2 6 Q40 3, 80 6 T160 5 T198 6" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round"/></svg></p>
         </div>
+
+        <script>
+        (function() {
+            const lines = [
+                "Where the world is, there is no 靠谱",
+                "Rien n'est 靠谱 dans ce monde",
+                "Nichts ist 靠谱 auf dieser Welt",
+                "这世上就没靠谱的事儿",
+                "Nada es 靠谱 en este mundo",
+                "Niente è 靠谱 in 'sto mondo",
+                "Nada é 靠谱 nesse mundo",
+                "Ничего 靠谱 в этом мире нет",
+                "この世に靠谱なんてねぇよ",
+                "이 세상에 靠谱한 건 없어",
+                "Niks is 靠谱 in deze wereld",
+                "Bu dünyada hiçbir şey 靠谱 değil",
+                "ما في شي 靠谱 بهالدنيا",
+                "इस दुनिया में कुछ भी 靠谱 नहीं यार",
+                "ไม่มีอะไร 靠谱 ในโลกนี้เลย",
+                "Đời này chả có gì 靠谱 cả",
+                "Nggak ada yang 靠谱 di dunia ini",
+                "Wala talagang 靠谱 sa mundong 'to",
+                "Nimic nu e 靠谱 pe lumea asta",
+                "שום דבר לא 靠谱 בעולם הזה",
+                "Inget är 靠谱 i den här världen",
+                "Ingenting er 靠谱 i denne verden",
+                "Mikään ei oo 靠谱 tässä maailmassa",
+                "Nic nie jest 靠谱 na tym świecie",
+                "Nic není 靠谱 na tomhle světě",
+                "Semmi sem 靠谱 ezen a világon",
+                "Нічого 靠谱 у цьому світі нема",
+                "Τίποτα δεν είναι 靠谱 σ' αυτόν τον κόσμο",
+                "এই দুনিয়ায় কিছুই 靠谱 না",
+                "ਇਸ ਦੁਨੀਆ ਵਿੱਚ ਕੁਝ ਵੀ 靠谱 ਨਹੀਂ",
+                "ఈ ప్రపంచంలో ఏదీ 靠谱 కాదు",
+                "இந்த உலகத்தில் எதுவும் 靠谱 இல்லை",
+                "ບໍ່ມີຫຍັງ 靠谱 ໃນໂລກນີ້",
+                "ဒီလောကမှာ 靠谱 ဆိုတာမရှိဘူး",
+                "គ្មានអ្វី 靠谱 ក្នុងលោកនេះ",
+                "Энэ ертөнцөд 靠谱 гэж байхгүй",
+                "Hakuna kitu 靠谱 duniani hii",
+                "Niks is 靠谱 in hierdie wêreld",
+                "Ekkert er 靠谱 í þessum heimi",
+                "Res no és 靠谱 en aquest món",
+                "این دنیا هیچی 靠谱 نیست",
+                "ამ სამყაროში არაფერია 靠谱",
+                "Бул дүйнөдө 靠谱 деген жок",
+                "Bu dunyoda hech narsa 靠谱 emas",
+                "Нищо не е 靠谱 на тоя свят",
+                "Ništa nije 靠谱 na ovom svijetu",
+                "Ezer ez da 靠谱 mundu honetan",
+                "Nič ni 靠谱 na tem svetu",
+                "Нішто не е 靠谱 на овој свет"
+            ];
+
+            var container = document.getElementById('danmaku');
+            var ROW_COUNT = window.innerHeight < 700 ? 16 : 28;
+
+            function createLine(row) {
+                var span = document.createElement('span');
+                span.className = 'line';
+
+                // 每行只放一条随机翻译
+                span.textContent = lines[Math.floor(Math.random() * lines.length)];
+
+                // 位置固定在行轨道上
+                var top = (row / ROW_COUNT) * 100;
+                span.style.top = top + '%';
+
+                // 随机字号
+                var size = 1.4 + Math.random() * 1.6; // 1.4 ~ 3.0
+                span.style.fontSize = size + 'em';
+                // 大字亮（近处），小字淡（远处）
+                var opacity = 0.08 + ((size - 1.4) / 1.6) * 0.22;
+                span.style.opacity = opacity;
+                // 小字模糊（远处），大字清晰（近处）
+                var blur = (1 - (size - 1.4) / 1.6) * 2.5;
+                span.style.filter = 'blur(' + blur + 'px)';
+
+                // 速度：大字快（近处），小字慢（远处）
+                var t = (size - 1.4) / 1.6;
+                var duration = 65 - t * 25;
+                var golden = 0.618033988749;
+                var delay = -((row * golden) % 1) * duration;
+                span.style.animationDuration = duration + 's';
+                span.style.animationDelay = delay + 's';
+
+                container.appendChild(span);
+
+                // 动画结束后换新内容和新字号
+                span.addEventListener('animationiteration', function() {
+                    span.textContent = lines[Math.floor(Math.random() * lines.length)];
+                    var newSize = 1.4 + Math.random() * 1.6;
+                    span.style.fontSize = newSize + 'em';
+                    var newOpacity = 0.08 + ((newSize - 1.4) / 1.6) * 0.22;
+                    span.style.opacity = newOpacity;
+                    var newBlur = (1 - (newSize - 1.4) / 1.6) * 2.5;
+                    span.style.filter = 'blur(' + newBlur + 'px)';
+                });
+            }
+
+            for (var r = 0; r < ROW_COUNT; r++) {
+                createLine(r);
+            }
+        })();
+        </script>
     </body>
 </html>
