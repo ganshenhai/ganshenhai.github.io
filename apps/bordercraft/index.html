@@ -60,6 +60,33 @@
             pointer-events: none;
         }
 
+        /* 六边形网格背景 */
+        .hex-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.3;
+            background-repeat: repeat;
+            animation: hex-drift 10s linear infinite;
+        }
+
+        .hex-grid canvas {
+            display: none;
+        }
+
+        @keyframes hex-drift {
+            from { background-position: 0 0; }
+            to { background-position: -104px -90px; }
+        }
+
+        [data-theme="light"] .hex-grid {
+            opacity: 0.15;
+        }
+
         /* 右上角主题切换按钮 */
         .theme-toggle {
             position: absolute;
@@ -196,7 +223,6 @@
         footer {
             padding: 30px 20px;
             text-align: center;
-            border-top: 1px solid var(--border-color);
             position: relative;
             z-index: 1;
         }
@@ -253,6 +279,9 @@
 
     <div class="bg-glow"></div>
 
+    <!-- 六边形网格背景 -->
+    <div class="hex-grid"><canvas id="hexCanvas"></canvas></div>
+
     <!-- 主题切换按钮 -->
     <button class="theme-toggle" id="themeToggleBtn" aria-label="Toggle Theme">🌙</button>
 
@@ -295,6 +324,56 @@
             &copy; 2026 BorderCraft. All Rights Reserved.
         </div>
     </footer>
+
+    <script>
+        // 六边形网格 —— 画一次生成背景图，CSS 动画移动
+        (function() {
+            var canvas = document.getElementById('hexCanvas');
+            var ctx = canvas.getContext('2d');
+            var size = 30;
+            var hexW = size * Math.sqrt(3);
+            var tileH = size * 2 * 0.75;
+
+            // 画一个 tile（刚好能无缝平铺的最小单元）
+            // 蜂窝的最小平铺单元：宽 2*hexW，高 2*tileH
+            var tw = Math.ceil(hexW * 2);
+            var th = Math.ceil(tileH * 2);
+            canvas.width = tw;
+            canvas.height = th;
+            canvas.style.width = tw + 'px';
+            canvas.style.height = th + 'px';
+
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 0.6;
+            ctx.beginPath();
+
+            var cols = 4;
+            var rows = 4;
+            for (var row = -1; row < rows; row++) {
+                for (var col = -1; col < cols; col++) {
+                    var cx = col * hexW + (row % 2 === 1 ? hexW / 2 : 0);
+                    var cy = row * tileH;
+                    for (var i = 0; i < 6; i++) {
+                        var angle = Math.PI / 180 * (60 * i - 30);
+                        var x = cx + size * Math.cos(angle);
+                        var y = cy + size * Math.sin(angle);
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath();
+                }
+            }
+            ctx.stroke();
+
+            // 把 canvas 转成 dataURL 设为 hex-grid 的背景图
+            var dataUrl = canvas.toDataURL();
+            var grid = document.querySelector('.hex-grid');
+            grid.style.backgroundImage = 'url(' + dataUrl + ')';
+            grid.style.backgroundSize = tw + 'px ' + th + 'px';
+            // 隐藏 canvas，用 CSS 背景代替
+            canvas.style.display = 'none';
+        })();
+    </script>
 
     <script>
         const themeToggleBtn = document.getElementById('themeToggleBtn');
