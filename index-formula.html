@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="./index.css">
+        <!-- KaTeX 公式渲染：本地引入，打开即就绪，无网络等待 -->
+        <link rel="stylesheet" href="./vendor/katex/katex.min.css">
+        <script src="./vendor/katex/katex.min.js"></script>
+        <title>S.G · formula</title>
+        <style>
+            /* 公式层：铺满、不挡交互、置于背景 */
+            .formula-bg {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 0;
+                overflow: hidden;
+                pointer-events: none;
+            }
+
+            /* 单条公式：随机出现，缓缓浮现 → 停留 → 缓缓隐去 */
+            .formula-bg .formula {
+                position: absolute;
+                white-space: nowrap;
+                color: rgba(150, 150, 160, 0.9);
+                opacity: 0;
+                will-change: opacity, transform;
+                transform: translate(-50%, -50%);
+                animation: formula-fade var(--life, 14s) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            }
+
+            /* KaTeX 默认颜色跟随 color，保证和弹幕一致 */
+            .formula-bg .formula .katex {
+                color: inherit;
+            }
+
+            /* displayMode 会生成居中块级结构，这里去掉外边距、取消换行，保证定位准确 */
+            .formula-bg .formula .katex-display {
+                margin: 0;
+                display: inline-block;
+            }
+            .formula-bg .formula .katex-display > .katex {
+                white-space: nowrap;
+            }
+
+            /* 图形：SVG 撑满其尺寸容器，描边继承灰白色 */
+            .formula-bg .formula svg {
+                width: 100%;
+                height: 100%;
+                color: inherit;
+            }
+
+            /* 缓慢浮现：透明 + 轻微下沉 + 微缩放 → 清晰 → 继续轻微上浮后隐去 */
+            @keyframes formula-fade {
+                0%   { opacity: 0; transform: translate(-50%, calc(-50% + 10px)) scale(0.96); }
+                30%  { opacity: var(--peak, 0.3); transform: translate(-50%, -50%) scale(1); }
+                70%  { opacity: var(--peak, 0.3); transform: translate(-50%, -50%) scale(1); }
+                100% { opacity: 0; transform: translate(-50%, calc(-50% - 10px)) scale(1.02); }
+            }
+
+            /* 前景：统一用 KaTeX 无衬线字体，干净克制；去掉彩色，统一灰白 */
+            .content h5,
+            .content h5 .hello,
+            .content h5 .there-italic,
+            .content h5 .tilde,
+            .content .signature {
+                font-family: 'KaTeX_SansSerif', -apple-system, 'Helvetica Neue', sans-serif;
+                font-style: normal;
+                font-weight: 400;
+            }
+            .content h5 {
+                letter-spacing: 0.01em;
+            }
+            /* 去掉 hello 的渐变彩色与 ~ 的黄色，统一成前景白色 */
+            .content h5 .hello {
+                background: none;
+                -webkit-background-clip: border-box;
+                background-clip: border-box;
+                -webkit-text-fill-color: currentColor;
+                color: inherit;
+                animation: none;
+            }
+            .content h5 .tilde {
+                color: inherit;
+                -webkit-text-fill-color: currentColor;
+            }
+            .content .signature {
+                letter-spacing: 0.02em;
+                transform: none;
+            }
+            /* 去掉签名下方的手绘线条 */
+            .content .signature .sig-line {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- 公式背景（测试版，替代弹幕） -->
+        <div class="formula-bg" id="formulaBg"></div>
+
+        <!-- 主内容（与正式版一致） -->
+        <div class="content">
+            <h5><span class="hello">hello</span>, <span class="there-italic">there</span><span class="tilde">~</span></h5>
+            <p class="signature">Shenhai Gan<svg class="sig-line" viewBox="0 0 200 10" xmlns="http://www.w3.org/2000/svg"><path d="M2 6 Q40 3, 80 6 T160 5 T198 6" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round"/></svg></p>
+        </div>
+
+        <script>
+        (function() {
+            // 「人类的智慧」——跨物理/数学/信息/化学的里程碑记号。
+            // weight: 1=最具标志性（近景大字）… 3=符号/常数（远景小字）
+            var formulaData = [
+                // —— 标志性方程（近景，分量最重）——
+                { tex: "E = mc^2", w: 1 },
+                { tex: "e^{i\\pi} + 1 = 0", w: 1 },
+                { tex: "i\\hbar\\frac{\\partial}{\\partial t}\\Psi = \\hat{H}\\Psi", w: 1 },
+                { tex: "R_{\\mu\\nu} - \\tfrac{1}{2}R\\,g_{\\mu\\nu} = \\frac{8\\pi G}{c^4} T_{\\mu\\nu}", w: 1 },
+                { tex: "S = k_B \\ln W", w: 1 },
+                { tex: "H = -\\sum_i p_i \\log_2 p_i", w: 1 },
+                { tex: "\\Delta x\\,\\Delta p \\geq \\frac{\\hbar}{2}", w: 1 },
+
+                // —— 重要方程 / 定理（中景）——
+                { tex: "a^2 + b^2 = c^2", w: 2 },
+                { tex: "F = ma", w: 2 },
+                { tex: "\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0}", w: 2 },
+                { tex: "\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}", w: 2 },
+                { tex: "\\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6}", w: 2 },
+                { tex: "P(A\\mid B) = \\frac{P(B\\mid A)\\,P(A)}{P(B)}", w: 2 },
+                { tex: "\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}", w: 2 },
+                { tex: "\\frac{d}{dx}\\!\\left(\\int_a^x f(t)\\,dt\\right) = f(x)", w: 2 },
+                { tex: "F = G\\frac{m_1 m_2}{r^2}", w: 2 },
+                { tex: "\\mathbf{F} = q(\\mathbf{E} + \\mathbf{v} \\times \\mathbf{B})", w: 2 },
+                { tex: "e^x = \\sum_{n=0}^{\\infty} \\frac{x^n}{n!}", w: 2 },
+                { tex: "\\zeta(s) = \\sum_{n=1}^{\\infty} \\frac{1}{n^s}", w: 2 },
+                { tex: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", w: 2 },
+
+                // —— 化学 / 生物（记号，无文字）——
+                { tex: "6\\,\\mathrm{CO_2} + 6\\,\\mathrm{H_2O} \\rightarrow \\mathrm{C_6H_{12}O_6} + 6\\,\\mathrm{O_2}", w: 2 },
+                { tex: "\\mathrm{N_2 + 3H_2 \\rightleftharpoons 2NH_3}", w: 2 },
+                { tex: "\\mathrm{pH} = -\\log_{10}[\\mathrm{H^+}]", w: 2 },
+
+                // —— 经济 / 金融 ——
+                { tex: "\\frac{\\partial V}{\\partial t} + \\tfrac{1}{2}\\sigma^2 S^2 \\frac{\\partial^2 V}{\\partial S^2} + rS\\frac{\\partial V}{\\partial S} - rV = 0", w: 2 },
+                { tex: "FV = PV\\,(1 + r)^n", w: 2 },
+
+                // —— 概率 / 统计 ——
+                { tex: "f(x) = \\frac{1}{\\sigma\\sqrt{2\\pi}}\\,e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}", w: 2 },
+                { tex: "\\mathbb{E}[X] = \\sum_x x\\,p(x)", w: 2 },
+
+                // —— 工程 / 控制 / 信号 ——
+                { tex: "X(f) = \\int_{-\\infty}^{\\infty} x(t)\\,e^{-i 2\\pi f t}\\,dt", w: 2 },
+                { tex: "V = IR", w: 2 },
+
+                // —— 计算机科学 ——
+                { tex: "T(n) = 2\\,T\\!\\left(\\tfrac{n}{2}\\right) + \\mathcal{O}(n)", w: 2 },
+                { tex: "f(n) = \\mathcal{O}(n \\log n)", w: 2 },
+
+                { tex: "\\langle \\psi | \\psi \\rangle = 1", w: 2 }
+            ];
+
+            var formulas = formulaData.map(function(d) { return d.tex; });
+            var weightOf = {};
+            formulaData.forEach(function(d) { weightOf[d.tex] = d.w; });
+
+            // —— 经典图形：细线灰白描边、无填充，和公式同色系 ——
+            // 用 currentColor 继承 .formula 的颜色；viewBox 统一 0 0 100 100
+            var STROKE = 'stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+            function svg(inner) {
+                return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="display:block;overflow:visible">' + inner + '</svg>';
+            }
+            var shapeData = [
+                // 勾股定理：直角三角形 + 两边小方块
+                { id: 'pythagoras', w: 2, svg: svg(
+                    '<path ' + STROKE + ' d="M20 80 L80 80 L20 20 Z"/>' +
+                    '<path ' + STROKE + ' d="M20 80 L20 92 L8 92 L8 80 Z"/>' +
+                    '<path ' + STROKE + ' d="M20 80 L32 80 L32 68 L20 68"/>'
+                ) },
+                // 圆与内接正方形（π 的来源）
+                { id: 'circle-square', w: 2, svg: svg(
+                    '<circle ' + STROKE + ' cx="50" cy="50" r="38"/>' +
+                    '<rect ' + STROKE + ' x="23" y="23" width="54" height="54"/>'
+                ) },
+                // 黄金螺旋（斐波那契）
+                { id: 'golden-spiral', w: 2, svg: svg(
+                    '<path ' + STROKE + ' d="M90 50 a40 40 0 0 1 -40 40 a40 40 0 0 1 -40 -40 a25 25 0 0 1 25 -25 a15 15 0 0 1 15 15 a9 9 0 0 1 -9 9 a6 6 0 0 1 -6 -6"/>'
+                ) },
+                // 单位圆 + 正弦波
+                { id: 'sine-wave', w: 2, svg: svg(
+                    '<path ' + STROKE + ' d="M8 50 Q 23 15, 38 50 T 68 50 T 98 50"/>' +
+                    '<line ' + STROKE + ' x1="4" y1="50" x2="98" y2="50"/>'
+                ) },
+                // 玻尔原子模型：核 + 三条椭圆轨道
+                { id: 'bohr-atom', w: 2, svg: svg(
+                    '<circle ' + STROKE + ' cx="50" cy="50" r="4"/>' +
+                    '<ellipse ' + STROKE + ' cx="50" cy="50" rx="42" ry="16"/>' +
+                    '<ellipse ' + STROKE + ' cx="50" cy="50" rx="42" ry="16" transform="rotate(60 50 50)"/>' +
+                    '<ellipse ' + STROKE + ' cx="50" cy="50" rx="42" ry="16" transform="rotate(120 50 50)"/>'
+                ) },
+                // DNA 双螺旋简笔
+                { id: 'dna', w: 2, svg: svg(
+                    '<path ' + STROKE + ' d="M35 8 C 65 28, 35 48, 65 68 C 35 72, 65 92, 35 92" transform="translate(0 0)"/>' +
+                    '<path ' + STROKE + ' d="M65 8 C 35 28, 65 48, 35 68 C 65 72, 35 92, 65 92"/>' +
+                    '<line ' + STROKE + ' x1="42" y1="18" x2="58" y2="18"/>' +
+                    '<line ' + STROKE + ' x1="42" y1="40" x2="58" y2="40"/>' +
+                    '<line ' + STROKE + ' x1="42" y1="62" x2="58" y2="62"/>' +
+                    '<line ' + STROKE + ' x1="42" y1="84" x2="58" y2="84"/>'
+                ) },
+                // 正态钟形曲线 + 坐标轴
+                { id: 'bell-curve', w: 2, svg: svg(
+                    '<path ' + STROKE + ' d="M6 82 C 30 82, 34 20, 50 20 C 66 20, 70 82, 94 82"/>' +
+                    '<line ' + STROKE + ' x1="4" y1="82" x2="96" y2="82"/>'
+                ) },
+                // 正四面体（柏拉图立体）线框
+                { id: 'tetrahedron', w: 2, svg: svg(
+                    '<path ' + STROKE + ' d="M50 10 L12 82 L88 82 Z"/>' +
+                    '<path ' + STROKE + ' d="M50 10 L50 60 L12 82 M50 60 L88 82"/>'
+                ) },
+                // 立方体线框
+                { id: 'cube', w: 2, svg: svg(
+                    '<rect ' + STROKE + ' x="18" y="30" width="46" height="46"/>' +
+                    '<rect ' + STROKE + ' x="36" y="14" width="46" height="46"/>' +
+                    '<line ' + STROKE + ' x1="18" y1="30" x2="36" y2="14"/>' +
+                    '<line ' + STROKE + ' x1="64" y1="30" x2="82" y2="14"/>' +
+                    '<line ' + STROKE + ' x1="18" y1="76" x2="36" y2="60"/>' +
+                    '<line ' + STROKE + ' x1="64" y1="76" x2="82" y2="60"/>'
+                ) },
+                // 图论：节点与边（网络 / 关系）
+                { id: 'graph-network', w: 2, svg: svg(
+                    '<line ' + STROKE + ' x1="20" y1="25" x2="75" y2="20"/>' +
+                    '<line ' + STROKE + ' x1="20" y1="25" x2="35" y2="75"/>' +
+                    '<line ' + STROKE + ' x1="75" y1="20" x2="80" y2="68"/>' +
+                    '<line ' + STROKE + ' x1="35" y1="75" x2="80" y2="68"/>' +
+                    '<line ' + STROKE + ' x1="75" y1="20" x2="35" y2="75"/>' +
+                    '<circle ' + STROKE + ' cx="20" cy="25" r="6"/>' +
+                    '<circle ' + STROKE + ' cx="75" cy="20" r="6"/>' +
+                    '<circle ' + STROKE + ' cx="35" cy="75" r="6"/>' +
+                    '<circle ' + STROKE + ' cx="80" cy="68" r="6"/>'
+                ) },
+                // 坐标系 + 抛物线
+                { id: 'parabola', w: 2, svg: svg(
+                    '<line ' + STROKE + ' x1="10" y1="8" x2="10" y2="90"/>' +
+                    '<line ' + STROKE + ' x1="6" y1="86" x2="94" y2="86"/>' +
+                    '<path ' + STROKE + ' d="M18 20 Q 52 110, 90 20"/>'
+                ) },
+                // 波的干涉 / 同心波纹（惠更斯）
+                { id: 'wave-interference', w: 2, svg: svg(
+                    '<circle ' + STROKE + ' cx="34" cy="50" r="10"/>' +
+                    '<circle ' + STROKE + ' cx="34" cy="50" r="20"/>' +
+                    '<circle ' + STROKE + ' cx="34" cy="50" r="30"/>' +
+                    '<circle ' + STROKE + ' cx="66" cy="50" r="10"/>' +
+                    '<circle ' + STROKE + ' cx="66" cy="50" r="20"/>' +
+                    '<circle ' + STROKE + ' cx="66" cy="50" r="30"/>'
+                ) },
+                // 向量场 / 箭头（场与方向）
+                { id: 'vector-field', w: 2, svg: svg(
+                    '<g ' + STROKE + '>' +
+                    '<line x1="20" y1="30" x2="38" y2="30"/><path d="M34 26 L38 30 L34 34"/>' +
+                    '<line x1="52" y1="30" x2="70" y2="30"/><path d="M66 26 L70 30 L66 34"/>' +
+                    '<line x1="20" y1="60" x2="38" y2="54"/><path d="M34 51 L38 54 L35 59"/>' +
+                    '<line x1="52" y1="60" x2="70" y2="54"/><path d="M66 51 L70 54 L67 59"/>' +
+                    '</g>'
+                ) },
+                // 杨辉三角 / 帕斯卡三角（点阵）
+                { id: 'pascal-triangle', w: 2, svg: svg(
+                    '<g ' + STROKE + '>' +
+                    '<circle cx="50" cy="18" r="4"/>' +
+                    '<circle cx="38" cy="40" r="4"/><circle cx="62" cy="40" r="4"/>' +
+                    '<circle cx="26" cy="62" r="4"/><circle cx="50" cy="62" r="4"/><circle cx="74" cy="62" r="4"/>' +
+                    '<circle cx="14" cy="84" r="4"/><circle cx="38" cy="84" r="4"/><circle cx="62" cy="84" r="4"/><circle cx="86" cy="84" r="4"/>' +
+                    '</g>'
+                ) },
+                // 单摆（经典力学）
+                { id: 'pendulum', w: 2, svg: svg(
+                    '<line ' + STROKE + ' x1="20" y1="12" x2="80" y2="12"/>' +
+                    '<line ' + STROKE + ' x1="50" y1="12" x2="68" y2="70"/>' +
+                    '<circle ' + STROKE + ' cx="68" cy="76" r="8"/>' +
+                    '<path ' + STROKE + ' d="M50 12 L34 66" stroke-dasharray="4 4"/>'
+                ) },
+                // 坐标轴 + 螺旋（极坐标）
+                { id: 'polar-spiral', w: 2, svg: svg(
+                    '<path ' + STROKE + ' d="M50 50 m0 0 a4 4 0 1 1 4 4 a10 10 0 1 1 -14 -10 a18 18 0 1 1 24 18 a28 28 0 1 1 -38 -28"/>'
+                ) }
+            ];
+            var shapeById = {};
+            shapeData.forEach(function(s) { shapeById[s.id] = s; });
+
+            var SHAPE_RATIO = 0.5; // 图形约占 1/2
+
+            var container = document.getElementById('formulaBg');
+
+            // 占位矩形列表（像素坐标）。基于真实包围盒做矩形避让，长短公式都能准确不交叠。
+            var active = [];
+            var GAP = 14; // 矩形之间额外留白（px），避免贴太近
+
+            // 记录当前屏上正在显示的公式，保证同屏不重复
+            var onScreen = {};
+
+            function pickFrom(list, prefix) {
+                var avail = [];
+                for (var i = 0; i < list.length; i++) {
+                    var key = prefix + list[i];
+                    if (!onScreen[key]) avail.push(list[i]);
+                }
+                if (avail.length === 0) return null;
+                return avail[Math.floor(Math.random() * avail.length)];
+            }
+
+            // 返回 { kind:'formula'|'shape', value, key, w }；按比例掺入图形，均保证同屏不重复
+            function pickItem() {
+                var wantShape = Math.random() < SHAPE_RATIO;
+                if (wantShape) {
+                    var ids = shapeData.map(function(s) { return s.id; });
+                    var id = pickFrom(ids, 'shape:');
+                    if (id) {
+                        var s = shapeById[id];
+                        return { kind: 'shape', value: s.svg, key: 'shape:' + id, w: s.w };
+                    }
+                    // 图形都在屏上，退回选公式
+                }
+                var tex = pickFrom(formulas, 'tex:');
+                if (tex) {
+                    return { kind: 'formula', value: tex, key: 'tex:' + tex, w: weightOf[tex] || 2 };
+                }
+                return null; // 公式与图形都占满，这轮跳过
+            }
+
+            function intersects(r) {
+                for (var i = 0; i < active.length; i++) {
+                    var a = active[i].rect;
+                    if (r.left < a.right + GAP && r.right + GAP > a.left &&
+                        r.top < a.bottom + GAP && r.bottom + GAP > a.top) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // seedProgress: 0~1，让条目从生命周期的某个阶段开始（开场铺稳态用）
+            function spawn(seedProgress) {
+                if (!window.katex) return;
+
+                var item = pickItem();
+                if (!item) return; // 公式与图形都在屏上，这轮跳过，保证同屏不重复
+                var tex = item.value, w = item.w;
+
+                var el = document.createElement('div');
+                el.className = 'formula';
+                // 先隐藏测量，避免定位前闪一下
+                el.style.visibility = 'hidden';
+                el.style.left = '0';
+                el.style.top = '0';
+
+                // 纵深：按「分量」决定字号区间 —— 标志性方程近景大字，图形/其他中远景
+                var sizeRange;
+                if (w === 1)      sizeRange = [2.1, 3.1]; // 近景
+                else if (w === 2) sizeRange = [1.5, 2.3]; // 中景
+                else              sizeRange = [1.0, 1.7]; // 远景
+                var size = sizeRange[0] + Math.random() * (sizeRange[1] - sizeRange[0]);
+                // t: 0(远/小) ~ 1(近/大)，用于亮度/模糊/停留时长，范围与整体 1.0~3.1 对应
+                var t = (size - 1.0) / (3.1 - 1.0);
+                el.style.fontSize = size.toFixed(2) + 'em';
+
+                var peak = 0.14 + t * 0.26;            // 远 0.14 ~ 近 0.40
+                var blur = (1 - t) * 2.2;              // 远模糊，近清晰
+                var life = 16 - t * 4;                // 更长生命周期：远 12s ~ 近 16s
+
+                if (item.kind === 'shape') {
+                    // 图形：按字号映射成像素方框，SVG 等比铺满。系数放大让图形更醒目
+                    var px = size * 48; // 近景约 100~150px，远景约 50~80px
+                    el.innerHTML = '<div style="width:' + px.toFixed(0) + 'px;height:' + px.toFixed(0) + 'px">' + tex + '</div>';
+                } else try {
+                    // displayMode: true —— 让 ∫ ∑ ∏ lim 的上下标回到正上/正下，排版正确
+                    katex.render(tex, el, { throwOnError: false, displayMode: true });
+                } catch (e) {
+                    el.textContent = 'E = mc^2';
+                }
+
+                container.appendChild(el);
+
+                // 渲染后测真实尺寸（bw/bh 避免与权重变量 w 冲突）
+                var bw = el.offsetWidth;
+                var bh = el.offsetHeight;
+                var vw = window.innerWidth;
+                var vh = window.innerHeight;
+                var marginX = Math.max(16, bw / 2);
+                var marginY = Math.max(16, bh / 2);
+
+                // 找一个不与现有矩形相交的中心点（像素）
+                var placed = null;
+                for (var tries = 0; tries < 30; tries++) {
+                    var cx = marginX + Math.random() * (vw - marginX * 2);
+                    var cy = marginY + Math.random() * (vh - marginY * 2);
+                    var rect = {
+                        left: cx - bw / 2, right: cx + bw / 2,
+                        top: cy - bh / 2, bottom: cy + bh / 2
+                    };
+                    if (!intersects(rect)) { placed = { cx: cx, cy: cy, rect: rect }; break; }
+                }
+
+                if (!placed) {
+                    // 这一轮没有空位，放弃，宁稀勿叠
+                    el.remove();
+                    return;
+                }
+
+                el.style.left = placed.cx + 'px';
+                el.style.top = placed.cy + 'px';
+                el.style.setProperty('--peak', peak.toFixed(3));
+                el.style.setProperty('--life', life.toFixed(2) + 's');
+                el.style.filter = 'blur(' + blur.toFixed(2) + 'px)';
+
+                // 开场用：用负 delay 让这条公式从生命周期中段开始，模拟稳态错落
+                var startProgress = (typeof seedProgress === 'number') ? seedProgress : 0;
+                if (startProgress > 0) {
+                    el.style.animationDelay = (-startProgress * life).toFixed(2) + 's';
+                }
+
+                el.style.visibility = 'visible';
+
+                // 登记到屏上集合（公式与图形共用 key），保证同屏不出现相同条目
+                onScreen[item.key] = true;
+
+                var record = { rect: placed.rect };
+                active.push(record);
+
+                function releaseRect() {
+                    var idx = active.indexOf(record);
+                    if (idx !== -1) active.splice(idx, 1);
+                }
+
+                // 进入淡出阶段（~68% 生命周期）就提前释放占位矩形，
+                // 让后面的公式可以预定它即将腾出的位置 —— 前景渐隐、后景补位，衔接顺滑
+                var remaining = life * (1 - startProgress);
+                var releaseAt = Math.max(0, remaining * 0.68);
+                setTimeout(releaseRect, releaseAt * 1000);
+
+                el.addEventListener('animationend', function() {
+                    releaseRect();
+                    // 彻底淡出后才解除去重占用，之后才可能再次出现同一条
+                    delete onScreen[item.key];
+                    el.remove();
+                });
+            }
+
+            // 用稳态方式铺一批：每条从生命周期不同阶段进入，画面立即错落饱满、无下雨感
+            function seedFill(count) {
+                for (var i = 0; i < count; i++) {
+                    var p = 0.05 + (i / count) * 0.9 + (Math.random() - 0.5) * 0.08;
+                    p = Math.max(0.03, Math.min(0.97, p));
+                    spawn(p);
+                }
+            }
+
+            function start() {
+                // 开场：尽量把屏幕铺满（受矩形避让约束，放不下自动停）
+                seedFill(40);
+                // 之后持续生成；页面隐藏时不生成，避免切回时积压爆发
+                setInterval(function() {
+                    if (!document.hidden) spawn();
+                }, 500);
+            }
+
+            // 切回页面时：不重启、不清屏，只补齐因后台节流而变稀的部分，画面平滑恢复
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    // 当前屏上条目越少，补得越多；用稳态进入，衔接自然
+                    var missing = Math.max(0, 18 - Object.keys(onScreen).length);
+                    if (missing > 0) seedFill(missing);
+                }
+            });
+
+            // 窗口尺寸变化时清掉占位记录，避免用旧坐标误判（元素继续各自淡出）
+            window.addEventListener('resize', function() {
+                active.length = 0;
+            });
+
+            // 同步加载，脚本就绪后尽早开场；DOM 可用即执行，不等整页 load
+            function kick() {
+                if (window.katex) {
+                    start();
+                } else {
+                    setTimeout(kick, 30);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', kick);
+            } else {
+                kick();
+            }
+        })();
+        </script>
+    </body>
+</html>
