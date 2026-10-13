@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="./index.css">
+        <title>S.G · matrix</title>
+        <style>
+            .matrix-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+            /* 前景与 index.html 一致：彩虹 hello、白色 there、黄色 ~；加一层暗影压住绿色的雨 */
+            .content h5 {
+                text-shadow: 0 2px 30px rgba(0,0,0,0.85), 0 0 60px rgba(0,0,0,0.6);
+            }
+            /* 彩色字本身不叠暗影，避免颜色发灰 */
+            .content h5 .hello, .content h5 .tilde { text-shadow: none; }
+
+            /* 终端光标：标题末尾闪烁的方块，像正在打字 */
+            /* 用 CSS 画一条细竖线，不受字体字形影响，粗细和高度都可控 */
+            .cursor {
+                display: inline-block;
+                width: 0.045em;
+                height: 0.55em;
+                margin-left: 0.12em;
+                margin-right: -0.165em; /* 抵消光标自身占的宽度，标题居中位置与其他页面完全一致 */
+                vertical-align: 0;
+                background: #ffffff;
+                border-radius: 1px;
+                box-shadow: 0 0 8px rgba(255,255,255,0.45);
+                animation: blink 1.05s steps(1) infinite;
+            }
+            @keyframes blink { 0%,50% { opacity: 1; } 50.01%,100% { opacity: 0; } }
+        </style>
+    </head>
+    <body>
+        <canvas class="matrix-bg" id="matrix"></canvas>
+
+        <div class="content">
+            <h5><span class="hello">hello</span>, there<span class="tilde">~</span><span class="cursor" aria-hidden="true"></span></h5>
+        </div>
+
+        <!-- 页脚签名 -->
+        <p class="footer-sign">ganshenhai</p>
+
+        <script>
+        (function() {
+            var canvas = document.getElementById('matrix');
+            var ctx = canvas.getContext('2d');
+            var W, H, DPR, fontSize, cols, drops;
+
+            // 字符集：片假名（黑客帝国原味）+ 拉丁字母 + 数字 + 十六进制 + 编程符号
+            //         + 希腊字母 + 数学符号 + 方框线 + 少量汉字
+            var glyphs = [].concat(
+                'ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ'.split(''),
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split(''),
+                '0123456789'.split(''),
+                '<>=*+-/\\|{}[]()$#@&%!?;:~^_'.split(''),
+                'αβγδεζηθλμξπρσφψωΣΩΔΛΠ'.split(''),
+                '∑∫∂∇∞≈≠≤≥±×÷√∈∀∃⊕⊗'.split(''),
+                '┌┐└┘├┤┬┴┼│─╳'.split(''),
+                '零一二三四五六七八九日月天人'.split('')
+            );
+
+            function resize() {
+                DPR = Math.min(window.devicePixelRatio || 1, 2);
+                W = window.innerWidth; H = window.innerHeight;
+                canvas.width = W*DPR; canvas.height = H*DPR;
+                canvas.style.width = W+'px'; canvas.style.height = H+'px';
+                ctx.setTransform(DPR,0,0,DPR,0,0);
+                fontSize = Math.max(16, Math.round(W / 70)); // 恢复原来的较大字号
+                cols = Math.ceil(W / fontSize);
+                var rowsMax = Math.ceil(H / fontSize) + 60;
+                drops = [];
+                for (var i=0;i<cols;i++) {
+                    var len = Math.max(6, Math.floor(rowsMax * (0.4 + Math.random()*0.5))); // 拖尾很长，常常跨越整屏
+                    var chars = [];
+                    for (var r=0;r<rowsMax;r++) chars.push(glyphs[Math.floor(Math.random()*glyphs.length)]);
+                    drops.push({
+                        // 起点分布在整屏高度范围内，一开始就铺满、无空档
+                        y: Math.random() * (H + rowsMax*fontSize) - rowsMax*fontSize*0.5,
+                        speed: fontSize * (5.5 + Math.random()*4.0), // 更快
+                        len: len,
+                        chars: chars
+                    });
+                }
+                ctx.fillStyle = '#0a0e0b';
+                ctx.fillRect(0,0,W,H);
+            }
+
+            var last = 0;
+            function frame(now) {
+                var dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+                last = now;
+
+                // 半透明覆盖形成拖尾渐隐（带一点绿意的深色底）
+                ctx.fillStyle = 'rgba(10,14,11,0.18)';
+                ctx.fillRect(0,0,W,H);
+                ctx.font = fontSize + 'px "SF Mono","Consolas","Menlo",monospace';
+                ctx.textBaseline = 'top';
+
+                for (var i=0;i<cols;i++) {
+                    var d = drops[i];
+                    var x = i * fontSize;
+                    var headRow = Math.floor(d.y / fontSize);
+
+                    // 画这一列的拖尾：字符固定不乱变，只有头部偶尔换一个
+                    for (var k=0;k<d.len;k++) {
+                        var row = headRow - k;
+                        if (row < 0) continue;
+                        var yy = row * fontSize;
+                        if (yy > H) continue;
+                        var ch = d.chars[row % d.chars.length];
+                        if (k === 0) {
+                            // 头部：亮薄荷绿 + 辉光（只给头部开辉光，开销小）
+                            ctx.shadowColor = 'rgba(61,255,136,0.55)';
+                            ctx.shadowBlur = fontSize * 0.45 * DPR;
+                            ctx.fillStyle = 'rgba(150,235,180,0.75)';
+                            ctx.fillText(ch, x, yy);
+                            ctx.shadowBlur = 0;
+                            if (Math.random() < 0.25) d.chars[row % d.chars.length] = glyphs[Math.floor(Math.random()*glyphs.length)];
+                            continue;
+                        }
+                        // 拖尾：辉光绿，越往上越暗；紧跟头部的几个字更亮
+                        var a = (1 - k / d.len) * (k < 4 ? 0.5 : 0.32);
+                        ctx.fillStyle = 'rgba(40,200,105,' + a.toFixed(3) + ')';
+                        ctx.fillText(ch, x, yy);
+                    }
+
+                    d.y += d.speed * dt;
+                    if (d.y - d.len*fontSize > H) {
+                        d.y = Math.random() * -H*0.3;
+                        d.speed = fontSize * (5.5 + Math.random()*4.0);
+                        d.len = Math.max(6, Math.floor((Math.ceil(H/fontSize)+60) * (0.4 + Math.random()*0.5)));
+                    }
+                }
+
+                if (!document.hidden) requestAnimationFrame(frame); else pending = true;
+            }
+            var pending = false;
+            document.addEventListener('visibilitychange', function(){
+                if (!document.hidden && pending){ pending=false; last=0; requestAnimationFrame(frame); }
+            });
+            window.addEventListener('resize', resize);
+            resize();
+            requestAnimationFrame(frame);
+        })();
+        </script>
+    </body>
+</html>

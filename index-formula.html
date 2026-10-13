@@ -7,6 +7,9 @@
         <!-- KaTeX 公式渲染：本地引入，打开即就绪，无网络等待 -->
         <link rel="stylesheet" href="./vendor/katex/katex.min.css">
         <script src="./vendor/katex/katex.min.js"></script>
+        <link rel="preload" href="./fonts/Caveat-500.woff2" as="font" type="font/woff2" crossorigin>
+        <!-- Rough.js：把图形画成手绘草图的线条（本地引入，MIT 协议） -->
+        <script src="./vendor/rough/rough.js"></script>
         <title>S.G · formula</title>
         <style>
             /* 公式层：铺满、不挡交互、置于背景 */
@@ -46,6 +49,30 @@
                 white-space: nowrap;
             }
 
+            /* 手写字体（本地，OFL 协议）：替换公式里的字母、数字和普通符号 */
+            @font-face {
+                font-family: 'Caveat';
+                src: url('./fonts/Caveat-500.woff2') format('woff2');
+                font-weight: 500;
+                font-style: normal;
+                font-display: block;
+            }
+
+            /* 手写感：
+               · 字母 / 数字 / + − = ( ) 等改用手写体（Caveat 里没有的字符，比如希腊字母，自动回落到 KaTeX 字体）
+               · ∑ ∫ √ 和大括号等大号符号保持 KaTeX 的专用字体，排版、上下标不会乱 */
+            .formula-bg .formula .katex {
+                font-family: 'Caveat', KaTeX_Main, 'Times New Roman', serif;
+            }
+            .formula-bg .formula .katex .mathnormal,
+            .formula-bg .formula .katex .mathit,
+            .formula-bg .formula .katex .mathrm,
+            .formula-bg .formula .katex .mathbf,
+            .formula-bg .formula .katex .boldsymbol,
+            .formula-bg .formula .katex .text {
+                font-family: 'Caveat', KaTeX_Math, KaTeX_Main, serif;
+            }
+
             /* 图形：SVG 撑满其尺寸容器，描边继承灰白色 */
             .formula-bg .formula svg {
                 width: 100%;
@@ -56,45 +83,17 @@
             /* 缓慢浮现：透明 + 轻微下沉 + 微缩放 → 清晰 → 继续轻微上浮后隐去 */
             @keyframes formula-fade {
                 0%   { opacity: 0; transform: translate(-50%, calc(-50% + 10px)) scale(0.96); }
-                30%  { opacity: var(--peak, 0.3); transform: translate(-50%, -50%) scale(1); }
-                70%  { opacity: var(--peak, 0.3); transform: translate(-50%, -50%) scale(1); }
+                18%  { opacity: var(--peak, 0.3); transform: translate(-50%, -50%) scale(1); }
+                75%  { opacity: var(--peak, 0.3); transform: translate(-50%, -50%) scale(1); }
                 100% { opacity: 0; transform: translate(-50%, calc(-50% - 10px)) scale(1.02); }
             }
 
-            /* 前景：统一用 KaTeX 无衬线字体，干净克制；去掉彩色，统一灰白 */
-            .content h5,
-            .content h5 .hello,
-            .content h5 .there-italic,
-            .content h5 .tilde,
-            .content .signature {
-                font-family: 'KaTeX_SansSerif', -apple-system, 'Helvetica Neue', sans-serif;
-                font-style: normal;
-                font-weight: 400;
+            /* 页面切到后台时整体暂停，切回来从暂停处继续，不会从头开始 */
+            .formula-bg.paused .formula {
+                animation-play-state: paused;
             }
-            .content h5 {
-                letter-spacing: 0.01em;
-            }
-            /* 去掉 hello 的渐变彩色与 ~ 的黄色，统一成前景白色 */
-            .content h5 .hello {
-                background: none;
-                -webkit-background-clip: border-box;
-                background-clip: border-box;
-                -webkit-text-fill-color: currentColor;
-                color: inherit;
-                animation: none;
-            }
-            .content h5 .tilde {
-                color: inherit;
-                -webkit-text-fill-color: currentColor;
-            }
-            .content .signature {
-                letter-spacing: 0.02em;
-                transform: none;
-            }
-            /* 去掉签名下方的手绘线条 */
-            .content .signature .sig-line {
-                display: none;
-            }
+
+            /* 前景完全沿用 index.css：彩虹 hello、白色 there、黄色 ~，与 index.html 一致 */
         </style>
     </head>
     <body>
@@ -103,9 +102,11 @@
 
         <!-- 主内容（与正式版一致） -->
         <div class="content">
-            <h5><span class="hello">hello</span>, <span class="there-italic">there</span><span class="tilde">~</span></h5>
-            <p class="signature">Shenhai Gan<svg class="sig-line" viewBox="0 0 200 10" xmlns="http://www.w3.org/2000/svg"><path d="M2 6 Q40 3, 80 6 T160 5 T198 6" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round"/></svg></p>
+            <h5><span class="hello">hello</span>, there<span class="tilde">~</span></h5>
         </div>
+
+        <!-- 页脚签名 -->
+        <p class="footer-sign">ganshenhai</p>
 
         <script>
         (function() {
@@ -288,7 +289,46 @@
 
             var SHAPE_RATIO = 0.5; // 图形约占 1/2
 
+            // 把 SVG 里的基本图元（path/circle/ellipse/rect/line）替换成 Rough.js 画的手绘线条。
+            // 每次出现都用新的随机种子，同一个图形每次的「笔迹」都略有不同。
+            function roughen(svg) {
+                if (!svg || !window.rough) return;
+                var rc = rough.svg(svg);
+                var els = svg.querySelectorAll('path, circle, ellipse, rect, line');
+                for (var i = 0; i < els.length; i++) {
+                    var e = els[i];
+                    var num = function(k) { return parseFloat(e.getAttribute(k)) || 0; };
+                    var opt = {
+                        stroke: 'currentColor',
+                        strokeWidth: 1.8,
+                        roughness: 1.3,   // 抖动程度
+                        bowing: 1.4,      // 线条微微弯曲
+                        seed: 1 + Math.floor(Math.random() * 2147483646)
+                    };
+                    var dash = e.getAttribute('stroke-dasharray');
+                    if (dash) opt.strokeLineDash = dash.split(/[\s,]+/).map(Number);
+                    var node = null;
+                    switch (e.tagName.toLowerCase()) {
+                        case 'path':    node = rc.path(e.getAttribute('d'), opt); break;
+                        case 'circle':  node = rc.circle(num('cx'), num('cy'), num('r') * 2, opt); break;
+                        case 'ellipse': node = rc.ellipse(num('cx'), num('cy'), num('rx') * 2, num('ry') * 2, opt); break;
+                        case 'rect':    node = rc.rectangle(num('x'), num('y'), num('width'), num('height'), opt); break;
+                        case 'line':    node = rc.line(num('x1'), num('y1'), num('x2'), num('y2'), opt); break;
+                    }
+                    if (!node) continue;
+                    var tr = e.getAttribute('transform');
+                    if (tr) node.setAttribute('transform', tr);
+                    e.parentNode.replaceChild(node, e);
+                }
+            }
+
             var container = document.getElementById('formulaBg');
+
+            // 可暂停时钟（毫秒）：页面在后台时停走，与暂停的 CSS 动画保持同步
+            var clockBase = 0, visibleSince = performance.now(), pausedAt = null;
+            function clock() {
+                return pausedAt !== null ? pausedAt : clockBase + (performance.now() - visibleSince);
+            }
 
             // 占位矩形列表（像素坐标）。基于真实包围盒做矩形避让，长短公式都能准确不交叠。
             var active = [];
@@ -362,19 +402,25 @@
                 var t = (size - 1.0) / (3.1 - 1.0);
                 el.style.fontSize = size.toFixed(2) + 'em';
 
-                var peak = 0.14 + t * 0.26;            // 远 0.14 ~ 近 0.40
+                var peak = 0.22 + t * 0.32;            // 远 0.22 ~ 近 0.54
                 var blur = (1 - t) * 2.2;              // 远模糊，近清晰
-                var life = 16 - t * 4;                // 更长生命周期：远 12s ~ 近 16s
+                var life = 11 - t * 3;                // 生命周期：远 11s ~ 近 8s（整体缩短，浮现更快）
 
                 if (item.kind === 'shape') {
                     // 图形：按字号映射成像素方框，SVG 等比铺满。系数放大让图形更醒目
                     var px = size * 48; // 近景约 100~150px，远景约 50~80px
                     el.innerHTML = '<div style="width:' + px.toFixed(0) + 'px;height:' + px.toFixed(0) + 'px">' + tex + '</div>';
+                    roughen(el.querySelector('svg')); // 转成手绘草图线条
                 } else try {
                     // displayMode: true —— 让 ∫ ∑ ∏ lim 的上下标回到正上/正下，排版正确
                     katex.render(tex, el, { throwOnError: false, displayMode: true });
                 } catch (e) {
                     el.textContent = 'E = mc^2';
+                }
+
+                // 随手写的东西很少是完全水平的：每条公式 / 图形随机倾斜一点点
+                if (el.firstElementChild) {
+                    el.firstElementChild.style.transform = 'rotate(' + ((Math.random() - 0.5) * 6).toFixed(1) + 'deg)';
                 }
 
                 container.appendChild(el);
@@ -432,9 +478,10 @@
 
                 // 进入淡出阶段（~68% 生命周期）就提前释放占位矩形，
                 // 让后面的公式可以预定它即将腾出的位置 —— 前景渐隐、后景补位，衔接顺滑
+                // 用「可暂停时钟」计时：页面在后台时时钟停走，和暂停的动画保持同步
                 var remaining = life * (1 - startProgress);
-                var releaseAt = Math.max(0, remaining * 0.68);
-                setTimeout(releaseRect, releaseAt * 1000);
+                record.releaseAt = clock() + Math.max(0, remaining - life * 0.28) * 1000;
+                record.release = releaseRect;
 
                 el.addEventListener('animationend', function() {
                     releaseRect();
@@ -456,18 +503,27 @@
             function start() {
                 // 开场：尽量把屏幕铺满（受矩形避让约束，放不下自动停）
                 seedFill(40);
-                // 之后持续生成；页面隐藏时不生成，避免切回时积压爆发
+                // 之后持续生成，同时释放已进入淡出阶段的占位；页面在后台时什么都不做
                 setInterval(function() {
-                    if (!document.hidden) spawn();
-                }, 500);
+                    if (document.hidden) return;
+                    var nowC = clock();
+                    for (var i = active.length - 1; i >= 0; i--) {
+                        if (active[i].releaseAt <= nowC) active[i].release();
+                    }
+                    spawn();
+                }, 350);
             }
 
-            // 切回页面时：不重启、不清屏，只补齐因后台节流而变稀的部分，画面平滑恢复
+            // 切到后台：暂停所有公式动画 + 停住时钟；切回来：从暂停处继续，画面不会从头开始
             document.addEventListener('visibilitychange', function() {
-                if (!document.hidden) {
-                    // 当前屏上条目越少，补得越多；用稳态进入，衔接自然
-                    var missing = Math.max(0, 18 - Object.keys(onScreen).length);
-                    if (missing > 0) seedFill(missing);
+                if (document.hidden) {
+                    pausedAt = clock();
+                    container.classList.add('paused');
+                } else {
+                    clockBase = pausedAt;
+                    visibleSince = performance.now();
+                    pausedAt = null;
+                    container.classList.remove('paused');
                 }
             });
 
@@ -479,7 +535,15 @@
             // 同步加载，脚本就绪后尽早开场；DOM 可用即执行，不等整页 load
             function kick() {
                 if (window.katex) {
-                    start();
+                    // 等手写字体就绪再开场，否则公式会先按默认字体测量位置、之后再变形
+                    var started = false;
+                    var go = function() { if (!started) { started = true; start(); } };
+                    if (document.fonts && document.fonts.load) {
+                        document.fonts.load("500 32px 'Caveat'").then(go, go);
+                        setTimeout(go, 800); // 字体迟迟不来也不干等
+                    } else {
+                        go();
+                    }
                 } else {
                     setTimeout(kick, 30);
                 }

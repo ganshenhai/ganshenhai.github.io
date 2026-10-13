@@ -21,6 +21,22 @@ body {
     position: relative;
 }
 
+/* 弹幕的手写字体：每种文字各一款（OFL 协议），只包含弹幕文案用到的字符，所以每个文件只有几 KB。
+   注意：改了弹幕文案后，需要按新文案重新生成这些字体子集，否则新字会退回系统字体。
+   字重声明成 100~900 的范围，避免浏览器在字重不匹配时自己合成粗体/细体。 */
+@font-face { font-family: 'HW Latin';  src: url('./fonts/hw/caveat.woff2') format('woff2');       font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Viet';   src: url('./fonts/hw/patrick-hand.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Greek';  src: url('./fonts/hw/mansalva.woff2') format('woff2');     font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Hans';   src: url('./fonts/hw/long-cang.woff2') format('woff2');    font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Hant';   src: url('./fonts/hw/iansui.woff2') format('woff2');       font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Jp';     src: url('./fonts/hw/klee-one.woff2') format('woff2');     font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Kr';     src: url('./fonts/hw/nanum-pen.woff2') format('woff2');    font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Arabic'; src: url('./fonts/hw/aref-ruqaa.woff2') format('woff2');   font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Hebrew'; src: url('./fonts/hw/amatic-sc.woff2') format('woff2');    font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Deva';   src: url('./fonts/hw/kalam.woff2') format('woff2');        font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Beng';   src: url('./fonts/hw/atma.woff2') format('woff2');         font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'HW Thai';   src: url('./fonts/hw/mali.woff2') format('woff2');         font-weight: 100 900; font-display: swap; }
+
 /* 弹幕容器 */
 .danmaku-bg {
     position: fixed;
@@ -108,6 +124,23 @@ h5 {
     height: 10px;
     margin-top: -4px;
     margin-left: 2em;
+}
+
+/* 页脚签名：所有页面统一固定在底部正中，纯白色 */
+.footer-sign {
+    position: fixed;
+    left: 50%;
+    bottom: calc(22px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 2;
+    /* 与标题同一手写体；Dancing Script 最细一档就是 400，这里用最细 */
+    font-family: 'Dancing Script', cursive;
+    font-size: 1.2em;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    color: #ffffff;
+    white-space: nowrap;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
 }
 
 /* 响应式 */

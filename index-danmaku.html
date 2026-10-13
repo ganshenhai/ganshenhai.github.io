@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="./index.css">
+        <title>S.G</title>
+    </head>
+    <body>
+        <!-- 弹幕背景 -->
+        <div class="danmaku-bg" id="danmaku"></div>
+
+        <!-- 主内容 -->
+        <div class="content">
+            <h5><span class="hello">hello</span>, there<span class="tilde">~</span></h5>
+        </div>
+
+        <!-- 页脚签名 -->
+        <p class="footer-sign">ganshenhai</p>
+
+        <script>
+        (function() {
+            const lines = [
+                "The sentence you're reading right now is the sentence you're reading right now.",
+                "你现在看到的这句话，是你现在正在看的这句话。",
+                "你現在看到的這句話，是你現在正在看的這句話。",
+                "今あなたが見ているこの文は、今あなたが読んでいるこの文です。",
+                "지금 당신이 보고 있는 이 문장은, 지금 당신이 읽고 있는 바로 그 문장입니다.",
+                "La phrase que vous lisez en ce moment est la phrase que vous lisez en ce moment.",
+                "Der Satz, den du gerade liest, ist der Satz, den du gerade liest.",
+                "La frase que estás leyendo ahora es la frase que estás leyendo ahora.",
+                "La frase che stai leggendo adesso è la frase che stai leggendo adesso.",
+                "A frase que você está lendo agora é a frase que você está lendo agora.",
+                "De zin die je nu leest, is de zin die je nu leest.",
+                "Meningen du läser just nu är meningen du läser just nu.",
+                "Setningen du leser akkurat nå, er setningen du leser akkurat nå.",
+                "Sætningen, du læser lige nu, er sætningen, du læser lige nu.",
+                "Lause, jota luet juuri nyt, on lause, jota luet juuri nyt.",
+                "Zdanie, które teraz czytasz, to zdanie, które teraz czytasz.",
+                "Věta, kterou právě čteš, je věta, kterou právě čteš.",
+                "Veta, ktorú práve čítaš, je veta, ktorú práve čítaš.",
+                "Az a mondat, amit most olvasol, az a mondat, amit most olvasol.",
+                "Propoziția pe care o citești acum este propoziția pe care o citești acum.",
+                "Предложение, которое ты сейчас читаешь, — это предложение, которое ты сейчас читаешь.",
+                "Речення, яке ти зараз читаєш, — це речення, яке ти зараз читаєш.",
+                "Изречението, което четеш в момента, е изречението, което четеш в момента.",
+                "Реченица коју управо читаш је реченица коју управо читаш.",
+                "Η πρόταση που διαβάζεις τώρα είναι η πρόταση που διαβάζεις τώρα.",
+                "Şu an okuduğun cümle, şu an okuduğun cümledir.",
+                "המשפט שאתה קורא עכשיו הוא המשפט שאתה קורא עכשיו.",
+                "الجملة التي تقرؤها الآن هي الجملة التي تقرؤها الآن.",
+                "جمله‌ای که الان داری می‌خونی، همون جمله‌ایه که الان داری می‌خونی.",
+                "जो वाक्य आप अभी पढ़ रहे हैं, वही वाक्य है जो आप अभी पढ़ रहे हैं।",
+                "যে বাক্যটা তুমি এখন পড়ছ, সেটাই সেই বাক্য যেটা তুমি এখন পড়ছ।",
+                "ประโยคที่คุณกำลังอ่านอยู่ตอนนี้ ก็คือประโยคที่คุณกำลังอ่านอยู่ตอนนี้",
+                "Câu bạn đang đọc lúc này chính là câu bạn đang đọc lúc này.",
+                "Kalimat yang lagi kamu baca sekarang adalah kalimat yang lagi kamu baca sekarang.",
+                "Ayat yang sedang anda baca sekarang ialah ayat yang sedang anda baca sekarang.",
+                "Ang pangungusap na binabasa mo ngayon ay ang pangungusap na binabasa mo ngayon.",
+                "Sentensi unayoisoma sasa hivi ndiyo sentensi unayoisoma sasa hivi.",
+                "Қазір оқып отырған сөйлемің — қазір оқып отырған сөйлемің.",
+                "წინადადება, რომელსაც ახლა კითხულობ, არის წინადადება, რომელსაც ახლა კითხულობ.",
+                "Чиний одоо уншиж буй өгүүлбэр бол чиний одоо уншиж буй өгүүлбэр юм."
+            ];
+
+            var container = document.getElementById('danmaku');
+            var ROW_COUNT = window.innerHeight < 700 ? 20 : 34;
+
+            // 按文字类型选手写字体；scale 用来把视觉大小拉齐（有的手写体天生显小）
+            var SYS = ", -apple-system, 'Helvetica Neue', 'Segoe UI', sans-serif";
+            var HW_FONTS = [
+                { re: /[\u3040-\u30FF]/,               family: "'HW Jp'",     scale: 1.0 },  // 日文（先于中文判断：日文也含汉字）
+                { re: /[\uAC00-\uD7AF]/,               family: "'HW Kr'",     scale: 1.25 }, // 韩文
+                // 繁体：出现常见的繁体专用字就算繁体（先于简体判断）
+                { re: /[這現話們說個來時會對還過學為與國見長門問體愛]/, family: "'HW Hant'", scale: 1.05 }, // 繁体中文：芫荽
+                { re: /[\u4E00-\u9FFF]/,               family: "'HW Hans'",   scale: 1.1 },  // 简体中文：龙藏体
+                { re: /[\u0590-\u05FF]/,               family: "'HW Hebrew'", scale: 1.2 },  // 希伯来文
+                { re: /[\u0600-\u06FF]/,               family: "'HW Arabic'", scale: 1.05 }, // 阿拉伯文、波斯文
+                { re: /[\u0980-\u09FF]/,               family: "'HW Beng'",   scale: 1.0 },  // 孟加拉文（先于印地文：它也用「।」）
+                { re: /[\u0900-\u097F]/,               family: "'HW Deva'",   scale: 1.0 },  // 印地文
+                { re: /[\u0E00-\u0E7F]/,               family: "'HW Thai'",   scale: 1.0 },  // 泰文
+                { re: /[\u0370-\u03FF]/,               family: "'HW Greek'",  scale: 1.0 },  // 希腊文
+                { re: /[\u10A0-\u10FF]/,               family: "inherit",     scale: 1.0 },  // 格鲁吉亚文：暂无手写字体
+                { re: /[\u1EA0-\u1EF9\u0110\u0111]/,   family: "'HW Viet'",   scale: 1.05 }, // 越南文
+                { re: /./,                             family: "'HW Latin'",  scale: 1.15 }  // 其余拉丁 + 西里尔字母
+            ];
+            function fontFor(text) {
+                for (var i = 0; i < HW_FONTS.length; i++) if (HW_FONTS[i].re.test(text)) return HW_FONTS[i];
+                return HW_FONTS[HW_FONTS.length - 1];
+            }
+            // 设置文字、对应手写字体和字号（size 是基础字号，单位 em）
+            function setLine(span, text, size) {
+                var f = fontFor(text);
+                span.textContent = text;
+                span.style.fontFamily = f.family === 'inherit' ? '' : f.family + SYS;
+                span.style.fontSize = (size * f.scale) + 'em';
+            }
+
+            // 同一时刻屏幕上每种语言最多出现一次：记录正在显示的文案，换新文案时只从没在显示的里面挑
+            var inUse = {};
+            function pickLine(prev) {
+                var avail = [];
+                for (var i = 0; i < lines.length; i++) {
+                    if (!inUse[i] && i !== prev) avail.push(i);
+                }
+                if (!avail.length) avail = [prev]; // 理论上不会发生（行数少于文案数）
+                var idx = avail[Math.floor(Math.random() * avail.length)];
+                if (prev !== undefined) delete inUse[prev];
+                inUse[idx] = true;
+                return idx;
+            }
+
+            function createLine(row) {
+                var span = document.createElement('span');
+                span.className = 'line';
+
+                // 位置固定在行轨道上
+                var top = (row / ROW_COUNT) * 100;
+                span.style.top = top + '%';
+
+                // 随机字号；每行只放一条随机翻译，并套用对应的手写字体
+                var size = 1.4 + Math.random() * 1.6; // 1.4 ~ 3.0
+                var lineIdx = pickLine();
+                setLine(span, lines[lineIdx], size);
+                // 大字亮（近处），小字淡（远处）
+                var opacity = 0.14 + ((size - 1.4) / 1.6) * 0.3;
+                span.style.opacity = opacity;
+                // 小字模糊（远处），大字清晰（近处）
+                var blur = (1 - (size - 1.4) / 1.6) * 2.5;
+                span.style.filter = 'blur(' + blur + 'px)';
+
+                // 速度：大字快（近处），小字慢（远处）
+                var t = (size - 1.4) / 1.6;
+                var duration = 65 - t * 25;
+                var golden = 0.618033988749;
+                var delay = -((row * golden) % 1) * duration;
+                span.style.animationDuration = duration + 's';
+                span.style.animationDelay = delay + 's';
+
+                container.appendChild(span);
+
+                // 动画结束后换新内容和新字号
+                span.addEventListener('animationiteration', function() {
+                    var newSize = 1.4 + Math.random() * 1.6;
+                    lineIdx = pickLine(lineIdx); // 换一条当前不在屏幕上的语言
+                    setLine(span, lines[lineIdx], newSize);
+                    var newOpacity = 0.14 + ((newSize - 1.4) / 1.6) * 0.3;
+                    span.style.opacity = newOpacity;
+                    var newBlur = (1 - (newSize - 1.4) / 1.6) * 2.5;
+                    span.style.filter = 'blur(' + newBlur + 'px)';
+                });
+            }
+
+            for (var r = 0; r < ROW_COUNT; r++) {
+                createLine(r);
+            }
+        })();
+        </script>
+    </body>
+</html>

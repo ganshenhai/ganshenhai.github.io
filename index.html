@@ -5,111 +5,240 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="./index.css">
         <title>S.G</title>
+        <style>
+            .geo-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+            /* 前景沿用 index.css 的字体，加一层暗影，让字在粒子上依然清楚 */
+            .content h5 { text-shadow: 0 2px 30px rgba(0,0,0,0.8), 0 0 60px rgba(0,0,0,0.6); }
+            /* 彩虹 hello、黄色 ~ 与 index.html 一致；彩色字本身不叠暗影，避免颜色发灰 */
+            .content h5 .hello, .content h5 .tilde { text-shadow: none; }
+        </style>
     </head>
     <body>
-        <!-- 弹幕背景 -->
-        <div class="danmaku-bg" id="danmaku"></div>
+        <canvas class="geo-bg" id="geo"></canvas>
 
-        <!-- 主内容 -->
         <div class="content">
             <h5><span class="hello">hello</span>, there<span class="tilde">~</span></h5>
-            <p class="signature">Shenhai Gan<svg class="sig-line" viewBox="0 0 200 10" xmlns="http://www.w3.org/2000/svg"><path d="M2 6 Q40 3, 80 6 T160 5 T198 6" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round"/></svg></p>
         </div>
 
+        <!-- 页脚签名 -->
+        <p class="footer-sign">ganshenhai</p>
+
         <script>
+        // 粒子场：成千上万的小粒子顺着同一股流场漂移。
+        //   · 流场 = 缓慢转向的主流 + 大涡旋 + 小弯曲，全部来自旋度（无散度）→ 粒子不扎堆、不留空
+        //   · 远中近三层：远处小、暗、慢，近处大、亮、快 → 纵深感
+        //   · 每个粒子带一点点运动拖影，看得出流向；出屏后从对边绕回，不会凭空出现/消失
         (function() {
-            const lines = [
-                "Doing nothing, achieving something.",
-                "不费事，也能成事。",
-                "不費事，也能成事。",
-                "力まなくても、ちゃんと形になる。",
-                "애쓰지 않아도, 어떻게든 되더라.",
-                "Sans forcer, et pourtant ça marche.",
-                "Ohne Mühe, und trotzdem läuft's.",
-                "Sin esforzarme, y aun así sale bien.",
-                "Senza sforzo, eppure funziona.",
-                "Sem esforço, e mesmo assim dá certo.",
-                "Zonder moeite, en toch komt het goed.",
-                "Utan ansträngning, och ändå blir det bra.",
-                "Uten å anstrenge meg, og likevel ordner det seg.",
-                "Uden at anstrenge mig, og alligevel går det.",
-                "Ei tarvitse yrittää, ja silti homma hoituu.",
-                "Bez wysiłku, a jednak się udaje.",
-                "Bez námahy, a přesto to vyjde.",
-                "Bez námahy, a predsa to vyjde.",
-                "Erőlködés nélkül, mégis összejön.",
-                "Fără efort, și totuși iese bine.",
-                "Без напряга, а всё равно получается.",
-                "Без зусиль, а воно таки виходить.",
-                "Без усилие, а пак се получава.",
-                "Без муке, а ипак успе.",
-                "Χωρίς κόπο, κι όμως βγαίνει.",
-                "Zahmetsizce, yine de oluyor.",
-                "בלי מאמץ, ובכל זאת זה מצליח.",
-                "بدون تعب، وبرضو بينجح.",
-                "بی‌زحمت، ولی باز هم جور می‌شه.",
-                "बिना मेहनत के भी, बात बन जाती है।",
-                "খুব একটা না খেটেও, কাজটা হয়ে যায়।",
-                "ไม่ต้องออกแรง แต่ก็สำเร็จซะงั้น",
-                "Chẳng cần gắng sức mà vẫn xong.",
-                "Santai aja, eh malah jadi.",
-                "Tak payah bersusah, tapi tetap menjadi.",
-                "Walang pinaghirapan, pero umuusad pa rin.",
-                "Bila kujikaza, bado mambo yanakwenda.",
-                "Әуре болмай-ақ, бәрі жөнге келеді.",
-                "ძალისხმევის გარეშე, მაინც გამოდის.",
-                "Онц хичээлгүйгээр ч бүтчихдэг."
+            var canvas = document.getElementById('geo');
+            var ctx = canvas.getContext('2d');
+            var W, H, DPR;
+
+            // 各色相的深色调（同一组色相，按远/中/近给不同明度）
+            var HUES = [212, 192, 160, 84, 38, 14, 342, 290, 258, 228, 204, 186];
+            var LAYERS = [
+                { size: 1.2, speed: 0.55, light: 24, sat: 45, share: 0.45 }, // 远
+                { size: 2.0, speed: 0.85, light: 33, sat: 52, share: 0.35 }, // 中
+                { size: 3.0, speed: 1.2,  light: 44, sat: 58, share: 0.20 }  // 近
             ];
+            var COLORS = LAYERS.map(function(L) {
+                return HUES.map(function(h) { return 'hsl(' + h + ',' + L.sat + '%,' + L.light + '%)'; });
+            });
 
-            var container = document.getElementById('danmaku');
-            var ROW_COUNT = window.innerHeight < 700 ? 16 : 28;
-
-            function createLine(row) {
-                var span = document.createElement('span');
-                span.className = 'line';
-
-                // 每行只放一条随机翻译
-                span.textContent = lines[Math.floor(Math.random() * lines.length)];
-
-                // 位置固定在行轨道上
-                var top = (row / ROW_COUNT) * 100;
-                span.style.top = top + '%';
-
-                // 随机字号
-                var size = 1.4 + Math.random() * 1.6; // 1.4 ~ 3.0
-                span.style.fontSize = size + 'em';
-                // 大字亮（近处），小字淡（远处）
-                var opacity = 0.08 + ((size - 1.4) / 1.6) * 0.22;
-                span.style.opacity = opacity;
-                // 小字模糊（远处），大字清晰（近处）
-                var blur = (1 - (size - 1.4) / 1.6) * 2.5;
-                span.style.filter = 'blur(' + blur + 'px)';
-
-                // 速度：大字快（近处），小字慢（远处）
-                var t = (size - 1.4) / 1.6;
-                var duration = 65 - t * 25;
-                var golden = 0.618033988749;
-                var delay = -((row * golden) % 1) * duration;
-                span.style.animationDuration = duration + 's';
-                span.style.animationDelay = delay + 's';
-
-                container.appendChild(span);
-
-                // 动画结束后换新内容和新字号
-                span.addEventListener('animationiteration', function() {
-                    span.textContent = lines[Math.floor(Math.random() * lines.length)];
-                    var newSize = 1.4 + Math.random() * 1.6;
-                    span.style.fontSize = newSize + 'em';
-                    var newOpacity = 0.08 + ((newSize - 1.4) / 1.6) * 0.22;
-                    span.style.opacity = newOpacity;
-                    var newBlur = (1 - (newSize - 1.4) / 1.6) * 2.5;
-                    span.style.filter = 'blur(' + newBlur + 'px)';
-                });
+            // —— 3D Perlin 噪声 ——
+            var perm = new Uint8Array(512);
+            (function() {
+                var p = [];
+                for (var i = 0; i < 256; i++) p[i] = i;
+                for (i = 255; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+                }
+                for (i = 0; i < 512; i++) perm[i] = p[i & 255];
+            })();
+            function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+            function lerp(t, a, b) { return a + t * (b - a); }
+            function grad(h, x, y, z) {
+                h &= 15;
+                var u = h < 8 ? x : y;
+                var v = h < 4 ? y : (h === 12 || h === 14 ? x : z);
+                return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+            }
+            function noise(x, y, z) {
+                var X = Math.floor(x) & 255, Y = Math.floor(y) & 255, Z = Math.floor(z) & 255;
+                x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+                var u = fade(x), v = fade(y), w = fade(z);
+                var A = perm[X] + Y, AA = perm[A] + Z, AB = perm[A + 1] + Z;
+                var B = perm[X + 1] + Y, BA = perm[B] + Z, BB = perm[B + 1] + Z;
+                return lerp(w,
+                    lerp(v, lerp(u, grad(perm[AA], x, y, z), grad(perm[BA], x - 1, y, z)),
+                            lerp(u, grad(perm[AB], x, y - 1, z), grad(perm[BB], x - 1, y - 1, z))),
+                    lerp(v, lerp(u, grad(perm[AA + 1], x, y, z - 1), grad(perm[BA + 1], x - 1, y, z - 1)),
+                            lerp(u, grad(perm[AB + 1], x, y - 1, z - 1), grad(perm[BB + 1], x - 1, y - 1, z - 1))));
             }
 
-            for (var r = 0; r < ROW_COUNT; r++) {
-                createLine(r);
+            // —— 参数 ——
+            var DENSITY = 320;      // 每多少像素面积一个粒子：越小越密
+            var U = 1.3;            // 主流速度（px/帧）
+            var SCALE = 0.0022, CURL = 260;        // 小弯曲
+            var BIG_SCALE = 0.0007, BIG = 900;     // 大涡旋
+            var MORPH = 0.05;       // 流场变化速度
+            var STREAK = 3.5;       // 运动拖影长度（= 速度 × STREAK）
+            var CELL = 20;          // 速度场缓存网格（px）
+            var FIELD_EVERY = 3;    // 每 3 帧重算一次速度场（流场变化很慢，看不出区别）
+            var MAX_DPR = 1.5;
+
+            var t = 0, frameNo = 0, mainX = U, mainY = 0;
+            var gw, gh, fvx, fvy;   // 速度场网格
+            var particles = [];
+
+            // 在一个点上计算流速（主流 + 两层旋度）
+            function velocityAt(x, y) {
+                var e = 1.5, z = t * MORPH;
+                var sx = x * SCALE, sy = y * SCALE, se = e * SCALE;
+                var bx = x * BIG_SCALE, by = y * BIG_SCALE, be = e * BIG_SCALE, bz = t * MORPH * 0.6 + 9.1;
+                var dy = CURL * (noise(sx, sy + se, z) - noise(sx, sy - se, z))
+                       + BIG * (noise(bx, by + be, bz) - noise(bx, by - be, bz));
+                var dx = CURL * (noise(sx + se, sy, z) - noise(sx - se, sy, z))
+                       + BIG * (noise(bx + be, by, bz) - noise(bx - be, by, bz));
+                return [mainX + dy / (2 * e), mainY - dx / (2 * e)];
             }
+
+            // 粒子很多，不逐个算噪声：先在粗网格上算速度场，粒子再做双线性插值
+            function updateField() {
+                var phi = noise(t * 0.03, 1.7, 0.3) * 2.4;     // 主流方向缓慢转向
+                mainX = U * Math.cos(phi); mainY = U * Math.sin(phi);
+                for (var j = 0; j < gh; j++) {
+                    for (var i = 0; i < gw; i++) {
+                        var v = velocityAt((i - 1) * CELL, (j - 1) * CELL);
+                        fvx[j * gw + i] = v[0]; fvy[j * gw + i] = v[1];
+                    }
+                }
+            }
+            function sampleField(x, y, out) {
+                var gx = x / CELL + 1, gy = y / CELL + 1;
+                var i = Math.floor(gx), j = Math.floor(gy);
+                if (i < 0) i = 0; if (j < 0) j = 0;
+                if (i > gw - 2) i = gw - 2; if (j > gh - 2) j = gh - 2;
+                var fx = gx - i, fy = gy - j;
+                var a = j * gw + i, b = a + 1, c = a + gw, d = c + 1;
+                out[0] = (fvx[a] * (1 - fx) + fvx[b] * fx) * (1 - fy) + (fvx[c] * (1 - fx) + fvx[d] * fx) * fy;
+                out[1] = (fvy[a] * (1 - fx) + fvy[b] * fx) * (1 - fy) + (fvy[c] * (1 - fx) + fvy[d] * fx) * fy;
+            }
+
+            function colorIndex(x, y) {
+                // 按位置分成色块，同一片区域的粒子颜色相近，色块随时间缓慢变化
+                var n = noise(x * 0.0018 + 11.3, y * 0.0018 + 3.9, t * 0.03);
+                var idx = Math.floor((n + 1) * 0.5 * HUES.length * 1.8);
+                return ((idx % HUES.length) + HUES.length) % HUES.length;
+            }
+
+            // 为什么会「连成线」：粒子顺着同一股流走得越久，越会被拉成一条条细丝。
+            // 解决：每个粒子只活几秒，到期就淡出、在随机位置重新淡入；再加一点随机扰动。
+            // 这样画面始终保持刚打开时那种离散、颗粒分明的感觉。
+            var LIFE_MIN = 180, LIFE_MAX = 360;   // 寿命（帧）：3~6 秒
+            var FADE_IN = 40, FADE_OUT = 50;      // 淡入/淡出（帧）
+            var JITTER = 0.35;                    // 每帧的随机扰动（px）
+            var LIFE_LEVELS = 4;                  // 淡入淡出的透明度分级（用于合批）
+
+            function respawn(p, initial) {
+                p.x = Math.random() * W;
+                p.y = Math.random() * H;
+                p.life = LIFE_MIN + Math.floor(Math.random() * (LIFE_MAX - LIFE_MIN));
+                // 初始时年龄错开，避免所有粒子同时淡出/重生
+                p.age = initial ? Math.floor(Math.random() * p.life) : 0;
+                p.c = colorIndex(p.x, p.y);
+            }
+            function lifeLevel(p) {
+                var a = Math.min(1, p.age / FADE_IN, (p.life - p.age) / FADE_OUT);
+                return Math.max(0, Math.min(LIFE_LEVELS - 1, Math.round(Math.max(0, a) * (LIFE_LEVELS - 1))));
+            }
+
+            function resize() {
+                DPR = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+                W = window.innerWidth; H = window.innerHeight;
+                canvas.width = W * DPR; canvas.height = H * DPR;
+                canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+                ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+                gw = Math.ceil(W / CELL) + 3; gh = Math.ceil(H / CELL) + 3;
+                fvx = new Float32Array(gw * gh); fvy = new Float32Array(gw * gh);
+                updateField();
+
+                particles = [];
+                var count = Math.round(W * H / DENSITY);
+                for (var i = 0; i < count; i++) {
+                    var r = Math.random(), layer = r < LAYERS[0].share ? 0 : (r < LAYERS[0].share + LAYERS[1].share ? 1 : 2);
+                    var x = Math.random() * W, y = Math.random() * H;
+                    var p0 = { x: x, y: y, vx: 0, vy: 0, layer: layer, c: colorIndex(x, y), recolor: Math.floor(Math.random() * 120) };
+                    respawn(p0, true);
+                    particles.push(p0);
+                }
+            }
+
+            var v2 = [0, 0];
+            var batches = null;
+            function frame() {
+                t += 0.016;
+                frameNo++;
+                if (frameNo % FIELD_EVERY === 0) updateField();
+
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#141416';
+                ctx.fillRect(0, 0, W, H);
+
+                // 按「层 × 颜色 × 透明度等级」分批，每批一次 stroke
+                var perLayer = HUES.length * LIFE_LEVELS;
+                var nb = LAYERS.length * perLayer;
+                if (!batches) { batches = []; for (var bi = 0; bi < nb; bi++) batches.push([]); }
+                for (var bj = 0; bj < nb; bj++) batches[bj].length = 0;
+
+                for (var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    var L = LAYERS[p.layer];
+                    p.age++;
+                    if (p.age >= p.life) respawn(p, false);
+                    sampleField(p.x, p.y, v2);
+                    p.vx = v2[0] * L.speed; p.vy = v2[1] * L.speed;
+                    // 随机扰动：打散顺流形成的细丝
+                    p.x += p.vx + (Math.random() - 0.5) * JITTER;
+                    p.y += p.vy + (Math.random() - 0.5) * JITTER;
+                    // 出屏从对边绕回
+                    if (p.x < -10) p.x += W + 20; else if (p.x > W + 10) p.x -= W + 20;
+                    if (p.y < -10) p.y += H + 20; else if (p.y > H + 10) p.y -= H + 20;
+                    // 颜色随所在区域缓慢更新（错峰更新，分摊开销）
+                    if (++p.recolor >= 120) { p.recolor = 0; p.c = colorIndex(p.x, p.y); }
+                    var lv = lifeLevel(p);
+                    if (lv === 0) continue; // 完全透明的这一刻不画
+                    batches[p.layer * perLayer + p.c * LIFE_LEVELS + lv].push(i);
+                }
+
+                ctx.lineCap = 'round';
+                for (var b = 0; b < nb; b++) {
+                    var list = batches[b];
+                    if (!list.length) continue;
+                    var layer = Math.floor(b / perLayer);
+                    var rest = b % perLayer;
+                    ctx.strokeStyle = COLORS[layer][Math.floor(rest / LIFE_LEVELS)];
+                    ctx.globalAlpha = (rest % LIFE_LEVELS) / (LIFE_LEVELS - 1);
+                    ctx.lineWidth = LAYERS[layer].size;
+                    ctx.beginPath();
+                    for (var k = 0; k < list.length; k++) {
+                        var q = particles[list[k]];
+                        ctx.moveTo(q.x - q.vx * STREAK, q.y - q.vy * STREAK);
+                        ctx.lineTo(q.x, q.y);
+                    }
+                    ctx.stroke();
+                }
+
+                if (!document.hidden) requestAnimationFrame(frame); else pending = true;
+            }
+            var pending = false;
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden && pending) { pending = false; requestAnimationFrame(frame); }
+            });
+            window.addEventListener('resize', resize);
+            resize();
+            requestAnimationFrame(frame);
         })();
         </script>
     </body>
