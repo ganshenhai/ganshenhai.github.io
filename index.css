@@ -91,15 +91,10 @@ h5 {
     text-shadow: 0 0 80px rgba(255, 255, 255, 0.08);
 }
 
-.hello {
-    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
+/* 标题统一纯白（所有页面）。保留 .hello / .tilde 两个类，以后想单独给它们上色时只改这里 */
+.hello,
 .tilde {
-    color: #feca57;
+    color: inherit;
 }
 
 .signature {

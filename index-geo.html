@@ -3,14 +3,13 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="./index.css?v=20261013">
+        <link rel="stylesheet" href="./index.css?v=20261014">
         <title>S.G · flow</title>
         <style>
             .geo-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
             /* 前景沿用 index.css 的字体，加一层暗影，让字在粒子上依然清楚 */
             .content h5 { text-shadow: 0 2px 30px rgba(0,0,0,0.8), 0 0 60px rgba(0,0,0,0.6); }
-            /* 彩虹 hello、黄色 ~ 与 index.html 一致；彩色字本身不叠暗影，避免颜色发灰 */
-            .content h5 .hello, .content h5 .tilde { text-shadow: none; }
+
         </style>
     </head>
     <body>
@@ -177,10 +176,17 @@
 
             var v2 = [0, 0];
             var batches = null;
-            function frame() {
-                t += 0.016;
-                frameNo++;
-                if (frameNo % FIELD_EVERY === 0) updateField();
+            // 按真实时间推进：所有参数都以 60Hz 下的一帧为基准，k = 本帧相当于多少个 60Hz 帧。
+            // 这样 60Hz / 120Hz / 144Hz 屏幕上的速度都和原来 60Hz 时一样
+            var lastTs = 0, fieldTimer = 0;
+            function frame(ts) {
+                var dt = lastTs ? Math.min(0.1, (ts - lastTs) / 1000) : 1 / 60;
+                lastTs = ts;
+                var k = dt * 60;
+                t += 0.016 * k;
+                fieldTimer += k;
+                if (fieldTimer >= FIELD_EVERY) { fieldTimer = 0; updateField(); }
+                var jit = JITTER * Math.sqrt(k); // 随机游走按时间的平方根缩放，扩散速度与帧率无关
 
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = '#141416';
@@ -195,18 +201,20 @@
                 for (var i = 0; i < particles.length; i++) {
                     var p = particles[i];
                     var L = LAYERS[p.layer];
-                    p.age++;
+                    p.age += k;
                     if (p.age >= p.life) respawn(p, false);
                     sampleField(p.x, p.y, v2);
+                    // vx/vy 保持「每 60Hz 帧的位移」，拖影长度因此与帧率无关；实际位移乘 k
                     p.vx = v2[0] * L.speed; p.vy = v2[1] * L.speed;
                     // 随机扰动：打散顺流形成的细丝
-                    p.x += p.vx + (Math.random() - 0.5) * JITTER;
-                    p.y += p.vy + (Math.random() - 0.5) * JITTER;
+                    p.x += p.vx * k + (Math.random() - 0.5) * jit;
+                    p.y += p.vy * k + (Math.random() - 0.5) * jit;
                     // 出屏从对边绕回
                     if (p.x < -10) p.x += W + 20; else if (p.x > W + 10) p.x -= W + 20;
                     if (p.y < -10) p.y += H + 20; else if (p.y > H + 10) p.y -= H + 20;
                     // 颜色随所在区域缓慢更新（错峰更新，分摊开销）
-                    if (++p.recolor >= 120) { p.recolor = 0; p.c = colorIndex(p.x, p.y); }
+                    p.recolor += k;
+                    if (p.recolor >= 120) { p.recolor = 0; p.c = colorIndex(p.x, p.y); }
                     var lv = lifeLevel(p);
                     if (lv === 0) continue; // 完全透明的这一刻不画
                     batches[p.layer * perLayer + p.c * LIFE_LEVELS + lv].push(i);
@@ -234,7 +242,7 @@
             }
             var pending = false;
             document.addEventListener('visibilitychange', function() {
-                if (!document.hidden && pending) { pending = false; requestAnimationFrame(frame); }
+                if (!document.hidden && pending) { pending = false; lastTs = 0; requestAnimationFrame(frame); }
             });
             window.addEventListener('resize', resize);
             resize();
