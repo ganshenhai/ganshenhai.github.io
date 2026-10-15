@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="./index.css?v=20261014">
+        <title>S.G · bauhaus</title>
+        <style>
+            .bauhaus-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+            .content h5 { text-shadow: 0 2px 30px rgba(0,0,0,0.85), 0 0 60px rgba(0,0,0,0.6); }
+        </style>
+    </head>
+    <body>
+        <canvas class="bauhaus-bg" id="bauhaus"></canvas>
+
+        <div class="content">
+            <h5><span class="hello">hello</span>, there<span class="tilde">~</span></h5>
+        </div>
+
+        <!-- 页脚签名 -->
+        <p class="footer-sign">ganshenhai</p>
+
+        <script>
+        // 包豪斯构成：屏幕被分成方格，每格放一个几何块（圆、半圆、四分之一圆、三角、条纹、圆环、色块）。
+        // 每隔一会儿，随机一格会转 90°，或者收缩消失、换成新的形状长出来 —— 像一张会自己重新排版的海报。
+        (function() {
+            var canvas = document.getElementById('bauhaus');
+            var ctx = canvas.getContext('2d');
+            var W, H, DPR;
+
+            // 低饱和复古配色：赭红、芥末黄、墨蓝、米白、墨绿（整体压暗，白色标题依然清楚）
+            var PALETTE = ['#b8533a', '#d39c3a', '#2e4a78', '#c9bfa6', '#2f6b5e'];
+            var BG = '#141416';
+            var CELL_TARGET = 0.17;   // 格子边长 ≈ 屏幕长边的 17%
+            var EVENT_MIN = 0.7, EVENT_MAX = 1.6;  // 两次变化之间的间隔（秒）
+            var ROTATE_TIME = 1.1, SWAP_TIME = 0.7; // 旋转 / 换形的时长（秒）
+
+            var TYPES = ['circle', 'half', 'quarter', 'triangle', 'stripes', 'ring', 'block', 'dot'];
+
+            var cols, rows, size, ox, oy, cells = [];
+
+            function randColor(except) {
+                var c;
+                do { c = PALETTE[Math.floor(Math.random() * PALETTE.length)]; } while (c === except);
+                return c;
+            }
+            function randomShape() {
+                var fg = randColor();
+                return {
+                    type: TYPES[Math.floor(Math.random() * TYPES.length)],
+                    fg: fg,
+                    // 约三分之一的格子带底色，形状叠在底色上
+                    bg: Math.random() < 0.35 ? randColor(fg) : null
+                };
+            }
+
+            function resize() {
+                DPR = Math.min(window.devicePixelRatio || 1, 2);
+                W = window.innerWidth; H = window.innerHeight;
+                canvas.width = W * DPR; canvas.height = H * DPR;
+                canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+                ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+                size = Math.round(Math.max(W, H) * CELL_TARGET);
+                cols = Math.ceil(W / size) + 1;
+                rows = Math.ceil(H / size) + 1;
+                ox = Math.round((W - cols * size) / 2);
+                oy = Math.round((H - rows * size) / 2);
+                cells = [];
+                for (var i = 0; i < cols * rows; i++) {
+                    var s = randomShape();
+                    var rot = Math.floor(Math.random() * 4) * Math.PI / 2;
+                    cells.push({ shape: s, next: null, rot: rot, rotFrom: rot, rotTo: rot, anim: null, at: 0, scale: 1 });
+                }
+            }
+
+            function ease(x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+
+            // 在以 (0,0) 为中心、边长 s 的格子里画形状
+            function drawShape(sh, s) {
+                var h = s / 2;
+                if (sh.bg) { ctx.fillStyle = sh.bg; ctx.fillRect(-h, -h, s, s); }
+                ctx.fillStyle = sh.fg;
+                ctx.strokeStyle = sh.fg;
+                ctx.beginPath();
+                switch (sh.type) {
+                    case 'circle':   ctx.arc(0, 0, h * 0.82, 0, Math.PI * 2); ctx.fill(); break;
+                    case 'dot':      ctx.arc(0, 0, h * 0.34, 0, Math.PI * 2); ctx.fill(); break;
+                    case 'half':     ctx.moveTo(-h, h); ctx.arc(0, h, h, Math.PI, 0); ctx.closePath(); ctx.fill(); break;
+                    case 'quarter':  ctx.moveTo(-h, h); ctx.arc(-h, h, s, -Math.PI / 2, 0); ctx.closePath(); ctx.fill(); break;
+                    case 'triangle': ctx.moveTo(-h, h); ctx.lineTo(h, h); ctx.lineTo(-h, -h); ctx.closePath(); ctx.fill(); break;
+                    case 'block':    ctx.fillRect(-h * 0.7, -h * 0.7, s * 0.7, s * 0.7); break;
+                    case 'ring':
+                        ctx.lineWidth = s * 0.14;
+                        ctx.arc(0, 0, h * 0.62, 0, Math.PI * 2); ctx.stroke(); break;
+                    case 'stripes':
+                        for (var k = 0; k < 3; k++) ctx.fillRect(-h, -h + k * s / 3 + s * 0.06, s, s / 3 - s * 0.12);
+                        break;
+                }
+            }
+
+            // 随机挑一格发生变化：旋转 90°，或换一个新形状
+            function trigger(now) {
+                var c = cells[Math.floor(Math.random() * cells.length)];
+                if (c.anim) return;
+                c.at = now;
+                if (Math.random() < 0.5) {
+                    c.anim = 'rotate';
+                    c.rotFrom = c.rot;
+                    c.rotTo = c.rot + (Math.random() < 0.5 ? 1 : -1) * Math.PI / 2;
+                } else {
+                    c.anim = 'swap';
+                    c.next = randomShape();
+                }
+            }
+
+            var t = 0, last = 0, nextEvent = 0.5;
+            function frame(ts) {
+                var dt = last ? Math.min(0.1, (ts - last) / 1000) : 1 / 60;
+                last = ts;
+                t += dt;
+
+                if (t >= nextEvent) {
+                    trigger(t);
+                    if (Math.random() < 0.35) trigger(t); // 偶尔两格同时变化
+                    nextEvent = t + EVENT_MIN + Math.random() * (EVENT_MAX - EVENT_MIN);
+                }
+
+                ctx.fillStyle = BG;
+                ctx.fillRect(0, 0, W, H);
+
+                for (var r = 0; r < rows; r++) {
+                    for (var cI = 0; cI < cols; cI++) {
+                        var c = cells[r * cols + cI];
+                        // 推进动画
+                        if (c.anim === 'rotate') {
+                            var p = Math.min(1, (t - c.at) / ROTATE_TIME);
+                            c.rot = c.rotFrom + (c.rotTo - c.rotFrom) * ease(p);
+                            if (p >= 1) { c.rot = c.rotTo; c.anim = null; }
+                        } else if (c.anim === 'swap') {
+                            var q = Math.min(1, (t - c.at) / SWAP_TIME);
+                            if (q < 0.5) c.scale = 1 - ease(q * 2);
+                            else {
+                                if (c.next) { c.shape = c.next; c.next = null; c.rot = Math.floor(Math.random() * 4) * Math.PI / 2; }
+                                c.scale = ease((q - 0.5) * 2);
+                            }
+                            if (q >= 1) { c.scale = 1; c.anim = null; }
+                        }
+                        if (c.scale <= 0.001) continue;
+                        ctx.save();
+                        ctx.translate(ox + cI * size + size / 2, oy + r * size + size / 2);
+                        // 每格裁剪在自己的方格内，形状不会互相越界
+                        ctx.beginPath();
+                        ctx.rect(-size / 2, -size / 2, size, size);
+                        ctx.clip();
+                        ctx.rotate(c.rot);
+                        ctx.scale(c.scale, c.scale);
+                        drawShape(c.shape, size);
+                        ctx.restore();
+                    }
+                }
+
+                // 整体压一层暗色，中心再暗一些，保证白色标题清楚
+                ctx.fillStyle = 'rgba(20,20,22,0.22)';
+                ctx.fillRect(0, 0, W, H);
+                var m = Math.min(W, H);
+                var v = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, m * 0.45);
+                v.addColorStop(0, 'rgba(20,20,22,0.55)');
+                v.addColorStop(1, 'rgba(20,20,22,0)');
+                ctx.fillStyle = v;
+                ctx.fillRect(0, 0, W, H);
+
+                requestAnimationFrame(frame);
+            }
+
+            document.addEventListener('visibilitychange', function() { if (!document.hidden) last = 0; });
+            window.addEventListener('resize', resize);
+            resize();
+            requestAnimationFrame(frame);
+        })();
+        </script>
+    </body>
+</html>
